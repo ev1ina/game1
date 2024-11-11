@@ -1,0 +1,58 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "test.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "dark forest.tsx": {
+            "scaleInDock": 1.5,
+            "scaleInEditor": 2
+        },
+        "env_ground.tsx": {
+            "scaleInDock": 2,
+            "scaleInEditor": 2
+        },
+        "ground_darkforest.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "main_lev_build.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1.5
+        },
+        "test.tmx": {
+            "scale": 2,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 246.5,
+                "y": 178.25
+            }
+        }
+    },
+    "last.imagePath": "C:/Users/eveli/Desktop/game1/rocky/01. Rocky Level",
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "openFiles": [
+        "test.tmx",
+        "env_ground.tsx",
+        "main_lev_build.tsx"
+    ],
+    "project": "untitled.tiled-project",
+    "recentFiles": [
+        "main_lev_build.tsx",
+        "env_ground.tsx",
+        "test.tmx",
+        "ground_darkforest.tsx",
+        "dark forest.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    }
+}
