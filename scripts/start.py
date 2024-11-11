@@ -25,6 +25,7 @@ shoot = False
 
 #load images
 dagger_img = pygame.image.load('rocky/Sprites/Gino Character/PNG/dagger/1.png'). convert_alpha()
+dagger_img2 = pygame.transform.scale(dagger_img, (int(dagger_img.get_width() * 2), int(dagger_img.get_height() * 2)))
 
 
 #define colours
@@ -50,6 +51,8 @@ class Main_character(pygame.sprite.Sprite):
         self.ammo = ammo
         self.start_ammo = ammo
         self.shoot_cooldown = 0
+        self.health = 100
+        self.max_health =self.health
         self.direction = 1
         self.vel_y = 0
         self.jump = False
@@ -62,7 +65,7 @@ class Main_character(pygame.sprite.Sprite):
         self.update_time = pygame.time.get_ticks()
 
         #load all images for the player
-        animation_types = ['Idle','Run','Jump', 'Throw attack']
+        animation_types = ['Idle','Run','Jump', 'Throw attack', 'Death']
         for animation in animation_types:
             #reset temporary list of img
             temp_list = []
@@ -80,6 +83,7 @@ class Main_character(pygame.sprite.Sprite):
 
     def update(self):
         self.update_animation()
+        self.check_alive()
         # update cooldown
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
@@ -91,6 +95,11 @@ class Main_character(pygame.sprite.Sprite):
             elif self.frame_index == len(self.animation_list[3]) - 1:
                 self.is_throwing = False
                 self.update_action(0)  # Возвращаемся к idle
+
+        #check collision with characters потом закинь на enemies
+
+
+
 
 
 
@@ -161,6 +170,7 @@ class Main_character(pygame.sprite.Sprite):
 
 
 
+
     def update_action(self, new_action):
         #check if the new aktion is different to the previous one
         if new_action != self.action:
@@ -169,16 +179,127 @@ class Main_character(pygame.sprite.Sprite):
             self.frame_index = 0
             self.update_time = pygame.time.get_ticks()
 
+    def check_alive(self):
+        if self.health <= 0:
+            self.health = 0
+            self.speed = 0
+            self.alive = False
+            self.update_action(4)
+
+
 
     def draw(self):
          screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
+
+
+import pygame
+import os
+
+class Enemy02(pygame.sprite.Sprite):
+    def __init__(self, char_type, x, y, scale, speed):
+        pygame.sprite.Sprite.__init__(self)
+        self.char_type = char_type
+        self.in_air = True
+        self.vel_y = 0
+        self.speed = speed
+        self.alive = True
+        self.health = 100
+        self.is_hit = False  # Флаг удара
+        self.action = 0  # 0 - Idle, 1 - Run, 2 - Attack, 3 - Hit, 4 - Death
+        self.frame_index = 0
+        self.flip = False
+        self.animation_list = []
+        self.update_time = pygame.time.get_ticks()
+        
+        # Загружаем анимации
+        animation_types = ['Idle', 'Run', 'Attack', 'Hit', 'Death']
+        for animation in animation_types:
+            temp_list = []
+            folder_path = f'rocky/Sprites/{self.char_type}/PNG/{animation}'
+            if os.path.exists(folder_path):
+                num_of_frames = len(os.listdir(folder_path))
+                for i in range(num_of_frames):
+                    img = pygame.image.load(f'{folder_path}/{i+1}.png').convert_alpha()
+                    img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
+                    temp_list.append(img)
+            self.animation_list.append(temp_list)
+
+        self.image = self.animation_list[self.action][self.frame_index]
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
+    def update(self):
+        self.update_animation()
+        self.apply_gravity()
+        self.check_alive()
+
+    def apply_gravity(self):
+        if self.in_air:
+            self.vel_y += GRAVITY
+            if self.vel_y > 10:
+                self.vel_y = 10
+            self.rect.y += self.vel_y
+
+        if self.rect.bottom > 300:
+            self.rect.bottom = 300
+            self.in_air = False
+            self.vel_y = 0
+
+    def update_animation(self):
+        ANIMATION_COOLDOWN = 100
+        # Проверяем, что текущая анимация не пустая
+        if len(self.animation_list[self.action]) > 0:
+            # Проверяем, что текущий индекс в допустимом диапазоне
+            if self.frame_index < len(self.animation_list[self.action]):
+                self.image = self.animation_list[self.action][self.frame_index]
+
+        # Обновляем кадры с задержкой
+        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
+            self.update_time = pygame.time.get_ticks()
+            self.frame_index += 1
+
+            # Если враг умирает и анимация достигла последнего кадра
+            if self.action == 4 and self.frame_index >= len(self.animation_list[4]):
+                self.kill()  # Удаляем врага из всех групп спрайтов
+            elif self.action == 3 and self.frame_index >= len(self.animation_list[3]):
+                # После завершения анимации "Hit" возвращаемся к "Idle"
+                self.is_hit = False
+                self.update_action(0)  # Возвращаемся к Idle
+            elif self.frame_index >= len(self.animation_list[self.action]):
+                self.frame_index = 0
+
+
+
+    def update_action(self, new_action):
+        if new_action != self.action:
+            self.action = new_action
+            self.frame_index = 0
+            self.update_time = pygame.time.get_ticks()
+
+    def take_damage(self, damage):
+        if self.alive and not self.is_hit:
+            self.health -= damage
+            self.is_hit = True
+            self.update_action(3)  # Устанавливаем состояние "Hit"
+            if self.health <= 0:
+                self.alive = False
+                self.update_action(4)  # Устанавливаем состояние "Death"
+
+    def check_alive(self):
+        if self.health <= 0 and self.alive:
+            self.alive = False
+            self.update_action(4)  # Устанавливаем "Death" только один раз
+
+    def draw(self):
+        screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
+
          
          
 class Dagger(pygame.sprite.Sprite):
     def __init__(self, x, y, direction):
         pygame.sprite.Sprite.__init__(self)
         self.speed = 10
-        self.image = dagger_img
+        self.image = dagger_img2
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.direction = direction
@@ -196,11 +317,11 @@ class Dagger(pygame.sprite.Sprite):
 #create sprite groups
 dagger_group = pygame.sprite.Group()
 
-
+enemy_group = pygame.sprite.Group()
          
 player = Main_character('Gino Character', 200, 200, 2, 5, 20)
-#enemy02 = Enemy02('Enemy02', 300, 200, 2, 3)
-
+enemy = Enemy02('Enemy02', 300, 200, 2, 10)
+enemy_group.add(enemy)
 
 run = True
 while run:
@@ -211,6 +332,18 @@ while run:
 
     player.update()
     player.draw()
+
+    
+
+    enemy_group.update()
+    enemy_group.draw(screen)
+
+    for dagger in dagger_group:
+        if pygame.sprite.collide_rect(dagger, enemy) and enemy.alive:
+            enemy.take_damage(25)
+            dagger.kill()
+
+
 
     #update and draw groups
     dagger_group.update()
