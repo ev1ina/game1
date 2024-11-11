@@ -20,10 +20,11 @@ GRAVITY = 0.75
 #define player action variables
 moving_left = False
 moving_right = False
+shoot = False
 
 
 #load images
-dagger_img = pygame.image.load('rocky/Sprites/Gino Character/PNG/Throw attack/dagger/1.png'). convert_alpha()
+dagger_img = pygame.image.load('rocky/Sprites/Gino Character/PNG/dagger/1.png'). convert_alpha()
 
 
 #define colours
@@ -41,14 +42,18 @@ def draw_bg():
 
 
 class Main_character(pygame.sprite.Sprite):
-    def __init__(self, char_type, x, y, scale, speed):
+    def __init__(self, char_type, x, y, scale, speed, ammo):
         pygame.sprite.Sprite.__init__(self)
         self.alive = True
         self.char_type = char_type
         self.speed = speed
+        self.ammo = ammo
+        self.start_ammo = ammo
+        self.shoot_cooldown = 0
         self.direction = 1
         self.vel_y = 0
         self.jump = False
+        self.is_throwing = False
         self.in_air = True
         self.flip = False
         self.animation_list = []
@@ -57,7 +62,7 @@ class Main_character(pygame.sprite.Sprite):
         self.update_time = pygame.time.get_ticks()
 
         #load all images for the player
-        animation_types = ['Idle','Run','Jump']
+        animation_types = ['Idle','Run','Jump', 'Throw attack']
         for animation in animation_types:
             #reset temporary list of img
             temp_list = []
@@ -72,6 +77,21 @@ class Main_character(pygame.sprite.Sprite):
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center = (x,y)
+
+    def update(self):
+        self.update_animation()
+        # update cooldown
+        if self.shoot_cooldown > 0:
+            self.shoot_cooldown -= 1
+
+         # Выполняем бросок в середине анимации "Throw attack"
+        if self.action == 3:
+            if self.frame_index == len(self.animation_list[3]) // 2 and self.shoot_cooldown == 0 and self.ammo > 0:
+                self.shoot()
+            elif self.frame_index == len(self.animation_list[3]) - 1:
+                self.is_throwing = False
+                self.update_action(0)  # Возвращаемся к idle
+
 
 
     def move(self, moving_left, moving_right):
@@ -99,7 +119,7 @@ class Main_character(pygame.sprite.Sprite):
         #apply gravity
         self.vel_y += GRAVITY
         if self.vel_y > 10:
-            self.vel_y
+            self.vel_y = 10
         dy += self.vel_y #for jump
 
         #check colision with floor
@@ -112,9 +132,19 @@ class Main_character(pygame.sprite.Sprite):
         self.rect.x += dx
         self.rect.y += dy
 
+    def shoot(self):
+        if self.shoot_cooldown == 0 and self.ammo > 0:
+            self.shoot_cooldown = 20
+
+            dagger = Dagger(self.rect.centerx + (0.05 * self.rect.size[0] * self.direction), self.rect.centery +20, self.direction)
+            dagger_group.add(dagger)
+            self.ammo -= 1
+
+        
+
     def update_animation(self):
         #update animation
-        ANIMATION_COOLDOWN = 125 #speed of anim
+        ANIMATION_COOLDOWN = 100 #speed of anim
         #update img depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
         #check if enough time has passed since thr last update
@@ -153,6 +183,13 @@ class Dagger(pygame.sprite.Sprite):
         self.rect.center = (x, y)
         self.direction = direction
 
+    def update(self):
+        #move dagger
+        self.rect.x += (self.direction * self.speed)
+        #check if dagger has gone off screen
+        if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH - 100:
+            self.kill()
+
 
 
 
@@ -161,7 +198,7 @@ dagger_group = pygame.sprite.Group()
 
 
          
-player = Main_character('Gino Character', 200, 200, 2, 5)
+player = Main_character('Gino Character', 200, 200, 2, 5, 20)
 #enemy02 = Enemy02('Enemy02', 300, 200, 2, 3)
 
 
@@ -172,12 +209,22 @@ while run:
 
     draw_bg()
 
-    player.update_animation()
+    player.update()
     player.draw()
+
+    #update and draw groups
+    dagger_group.update()
+    dagger_group.draw(screen)
+
 
     #update player action
     if player.alive:
-        if player.in_air:
+        # shoot dagger
+        if player.is_throwing:
+            player.update_action(3)  # 3 - это "Throw attack"
+        elif shoot:
+            player.is_throwing = True
+        elif player.in_air:
             player.update_action(2)#2 is jump
         elif moving_left or moving_right:
             player.update_action(1) # 1 on jooksemine
@@ -195,6 +242,8 @@ while run:
                 moving_left = True
             if event.key == pygame.K_d:
                 moving_right = True
+            if event.key == pygame.K_SPACE:
+                shoot = True
             if event.key == pygame.K_w and player.alive:
                 player.jump = True
             if event.key == pygame.K_ESCAPE:
@@ -206,6 +255,8 @@ while run:
                 moving_left = False
             if event.key == pygame.K_d:
                 moving_right = False
+            if event.key == pygame.K_SPACE:
+                shoot = False
 
     pygame.display.update()
 
