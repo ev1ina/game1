@@ -1,5 +1,6 @@
 import pygame
 import os
+import random
 
 pygame.init()
 
@@ -7,7 +8,7 @@ pygame.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
 
-TILE_SIZE = 1
+TILE_SIZE = 100
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Shooter')
@@ -82,6 +83,7 @@ class Main_character(pygame.sprite.Sprite):
         self.is_throwing = False
         self.in_air = True
         self.flip = False
+        self.is_hit = False
         self.animation_list = []
         self.frame_index = 0
         self.action = 0
@@ -122,7 +124,9 @@ class Main_character(pygame.sprite.Sprite):
                 self.update_action(0)  # Возвращаемся к idle
 
         #check collision with characters потом закинь на enemies
-
+        
+        if self.alive and enemy.alive and pygame.sprite.collide_rect(self, enemy):
+                self.take_damage(10)
 
 
 
@@ -170,7 +174,7 @@ class Main_character(pygame.sprite.Sprite):
         if self.shoot_cooldown == 0 and self.ammo > 0:
             self.shoot_cooldown = 20
 
-            dagger = Dagger(self.rect.centerx + (0.05 * self.rect.size[0] * self.direction), self.rect.centery +20, self.direction)
+            dagger = Dagger(self.rect.centerx + (0.1 * self.rect.size[0] * self.direction), self.rect.centery +20, self.direction)
             dagger_group.add(dagger)
             self.ammo -= 1
 
@@ -183,16 +187,10 @@ class Main_character(pygame.sprite.Sprite):
         if current_time - self.last_damage_time > self.damage_cooldown:
             self.health -= damage
             self.last_damage_time = current_time  # Uuendame viimast kahju aega
-            self.taking_damage = True  # Märgime, et tegelane võtab kahju
+            self.is_hit = True  # Märgime, et tegelane võtab kahju
             # Kui tervis on suurem kui 0, alustame "Hit" animatsiooni
-            if self.health > 0:
+            if self.is_hit:
                 self.update_action(5)  # 5 - "Hit" animatsioon
-            else:
-                # Kui tervis on null või väiksem, alustame "Death" animatsiooni
-                self.health = 0
-                self.alive = False
-                self.update_action(4)  # 4 - "Death" animatsioon
-
 
 
 
@@ -214,7 +212,7 @@ class Main_character(pygame.sprite.Sprite):
             # Kui "Hit" animatsioon on lõppenud, läheme tagasi "Idle" animatsioonile
             if self.action == 5 and self.frame_index >= len(self.animation_list[5]):
                 self.update_action(0)  # 0 - "Idle" animatsioon
-                self.taking_damage = False  # Lõpetame kahju võtmise oleku
+                self.is_hit = False  # Lõpetame kahju võtmise oleku
 
             # Kui tegevus on "Death" ja oleme jõudnud viimase kaadrini, peatame animatsiooni
             elif self.action == 4 and self.frame_index >= len(self.animation_list[4]) - 1:
@@ -223,9 +221,6 @@ class Main_character(pygame.sprite.Sprite):
             # Ülejäänud tegevused, nagu Run või Idle, jätkuvad loopitult
             elif self.frame_index >= len(self.animation_list[self.action]):
                 self.frame_index = 0  # Taaskäivita animatsioon
-
-
-
 
     def update_action(self, new_action):
         #check if the new aktion is different to the previous one
@@ -246,6 +241,7 @@ class Main_character(pygame.sprite.Sprite):
 
     def draw(self):
          screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
+         pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
 class Enemy02(pygame.sprite.Sprite):
     def __init__(self, char_type, x, y, scale, speed):
@@ -253,7 +249,9 @@ class Enemy02(pygame.sprite.Sprite):
         self.char_type = char_type
         self.in_air = True
         self.vel_y = 0
+        self.direction = 1
         self.speed = speed
+        self.attack_speed = speed
         self.alive = True
         self.health = 100
         self.is_hit = False  # Флаг удара
@@ -262,6 +260,10 @@ class Enemy02(pygame.sprite.Sprite):
         self.flip = False
         self.animation_list = []
         self.update_time = pygame.time.get_ticks()
+        self.move_counter = 0
+        self.idling = False
+        self.idle_counter = 0
+        self.vision = pygame.Rect(0, 0, 150, 20)
         
         # Загружаем анимации
         animation_types = ['Idle', 'Run', 'Attack', 'Hit', 'Death']
@@ -282,20 +284,92 @@ class Enemy02(pygame.sprite.Sprite):
 
     def update(self):
         self.update_animation()
-        self.apply_gravity()
         self.check_alive()
 
-    def apply_gravity(self):
-        if self.in_air:
-            self.vel_y += GRAVITY
-            if self.vel_y > 10:
-                self.vel_y = 10
-            self.rect.y += self.vel_y
 
-        if self.rect.bottom > 300:
-            self.rect.bottom = 300
+    def move(self, moving_left, moving_right):
+        #reset movement variables
+        dx = 0
+        dy = 0
+
+        #assign movement variable if moving left or right
+        if moving_left:
+            dx = -self.speed
+            self.flip = True
+            self.direction = -1
+
+        if moving_right:
+            dx = self.speed
+            self.flip = False
+            self.direction = 1
+
+         # apply gravity
+        self.vel_y += GRAVITY
+        if self.vel_y > 10:
+            self.vel_y = 10
+        dy += self.vel_y  # Apply gravity to dy
+
+        # check collision with floor
+        if self.rect.bottom + dy > 300:
+            dy = 300 - self.rect.bottom
             self.in_air = False
-            self.vel_y = 0
+        else:
+            self.in_air = True
+
+        # update rectangle position
+        self.rect.x += dx
+        self.rect.y += dy
+            
+
+
+    def ai(self):
+        if self.alive and player.alive:
+            if self.idling == False and random.randint(1, 200) == 1:
+                self.update_action(0) #idle
+                self.idling = True
+                self.idle_counter = 50
+
+            #chek if near
+            if self.vision.colliderect(player.rect):
+                #attack
+                self.update_action(2)
+                self.attack_speed = self.speed * 1.5
+
+                if player.rect.centerx - self.rect.centerx > 15 or player.rect.centerx - self.rect.centerx < -15:
+                    if player.rect.centerx < self.rect.centerx:
+                        self.move(True, False)
+                    elif player.rect.centerx > self.rect.centerx:
+                        self.move(False, True)
+
+                 # Reset speed after the attack
+                self.attack_speed = self.speed
+
+            if self.idling == False:
+                if self.direction == 1:
+                    ai_moving_right = True
+                else:
+                    ai_moving_right = False
+                ai_moving_left = not ai_moving_right
+                self.move(ai_moving_left, ai_moving_right)
+                #self.update_action(1)
+                self.move_counter += 1
+
+                #update vision
+                self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
+                #pygame.draw.rect(screen, RED, self.vision)
+
+                if self.move_counter > TILE_SIZE:
+                    self.direction *= -1
+                    self.move_counter *= -1
+
+            else:
+                self.idle_counter -= 1
+                if self.idle_counter <= 0:
+                    self.idling = False
+
+
+
+
 
     def update_animation(self):
         ANIMATION_COOLDOWN = 100
@@ -337,6 +411,7 @@ class Enemy02(pygame.sprite.Sprite):
                 self.alive = False
                 self.update_action(4)  # Устанавливаем состояние "Death"
 
+
     def check_alive(self):
         if self.health <= 0 and self.alive:
             self.alive = False
@@ -344,6 +419,8 @@ class Enemy02(pygame.sprite.Sprite):
 
     def draw(self):
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
+
+        pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
 
 class ItemBox(pygame.sprite.Sprite):
@@ -412,17 +489,17 @@ item_box_group = pygame.sprite.Group()
 
 
 #temp -create item boxes
-item_box = ItemBox('Health', 100, 300)
+item_box = ItemBox('Health', 100, 200)
 item_box_group.add(item_box)
-item_box = ItemBox('Ammo', 400, 300)
+item_box = ItemBox('Ammo', 400, 200)
 item_box_group.add(item_box)
-item_box = ItemBox('Diamond', 600, 300)
+item_box = ItemBox('Diamond', 600, 200)
 item_box_group.add(item_box)
 
 
-player = Main_character('Gino Character', 200, 200, 2, 5, 20)
+player = Main_character('Gino Character', 200, 200, 1.65, 5, 20)
 health_bar = HeathBar(10, 10, player.health, player.health)
-enemy = Enemy02('Enemy02', 300, 200, 2, 10)
+enemy = Enemy02('Enemy02', 300, 200, 1.65, 2)
 enemy_group.add(enemy)
 
 run = True
@@ -444,23 +521,17 @@ while run:
     #show ammo
     draw_text('AMMO: ',font, WHITE, 10, 65)
     for x in range(player.ammo):
-        screen.blit(dag1_box_img, (100 + (x * 10), 67))
+        screen.blit(dag1_box_img, (100 + (x * 7), 67))
 
     player.update()
     player.draw()
 
     
     for enemy in enemy_group:
+        enemy.ai()
         enemy.update()
         enemy.draw()
-        # Kontrollime, kas kahju võtmine on lubatud
-        if pygame.sprite.collide_rect(player, enemy) and player.alive and enemy.alive:
-            player.take_damage(10)
-
-
-
-    if pygame.sprite.collide_rect(player, enemy) and player.alive and enemy.alive:
-            player.take_damage(10)
+        
 
     for dagger in dagger_group:
         if pygame.sprite.collide_rect(dagger, enemy) and enemy.alive:
@@ -485,6 +556,8 @@ while run:
             player.update_action(3)  # 3 - это "Throw attack"
         elif shoot:
             player.is_throwing = True
+        elif player.is_hit:
+            player.update_action(5)
         elif player.in_air:
             player.update_action(2)#2 is jump
         elif moving_left or moving_right:
