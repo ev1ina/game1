@@ -186,8 +186,8 @@ class Main_character(pygame.sprite.Sprite):
 
         #check collision with characters потом закинь на enemies
         
-            if self.alive and enemy.alive and self.collision_rect.colliderect(enemy.collision_rect):
-                self.take_damage(10)
+        if self.alive and enemy.alive and self.collision_rect.colliderect(enemy.collision_rect):
+            self.take_damage(10)
 
         if self.direction == 1:  # Facing right
             self.collision_rect.topleft = (self.rect.x + 10, self.rect.y + 35)
@@ -416,10 +416,12 @@ class Enemy02(pygame.sprite.Sprite):
                 self.update_action(2)
                 self.attack_speed = self.speed * 1.2
 
-                if player.rect.centerx - self.rect.centerx > 10 or player.rect.centerx - self.rect.centerx < 10:
-                    if player.rect.centerx < self.rect.centerx:
+        
+
+                if player.collision_rect.centerx - self.collision_rect.centerx > 10 or player.collision_rect.centerx - self.collision_rect.centerx < 10:
+                    if player.collision_rect.centerx < self.collision_rect.centerx:
                         self.move(True, False)
-                    elif player.rect.centerx > self.rect.centerx:
+                    elif player.collision_rect.centerx > self.collision_rect.centerx:
                         self.move(False, True)
 
                  # Reset speed after the attack
@@ -440,7 +442,7 @@ class Enemy02(pygame.sprite.Sprite):
                 self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
                 #pygame.draw.rect(screen, RED, self.vision)
 
-                if self.move_counter > 100: #TILE_SIZE:
+                if self.move_counter > TILE_SIZE*3:
                     self.direction *= -1
                     self.move_counter *= -1
 
