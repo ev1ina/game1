@@ -1,17 +1,18 @@
-import pygame
+import pygame, sys
 import os
 import random
+from pytmx.util_pygame import load_pygame
 
 pygame.init()
 
 
 SCREEN_WIDTH = 800
-SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
+SCREEN_HEIGHT = 540
 
-TILE_SIZE = 100
+TILE_SIZE = 16
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Shooter')
+pygame.display.set_caption('Kill the fucking hero')
 
 #set framerate
 clock = pygame.time.Clock()
@@ -61,6 +62,18 @@ def draw_text(text, foont, text_col, x, y):
 def draw_bg():
     screen.fill(BG)
     pygame.draw.line(screen, RED, (0, 300), (SCREEN_WIDTH, 300))
+
+
+tmx_maps = {0: load_pygame('tiled/test.tmx')}
+
+class Level:
+    def __init__(self, tmx_map):
+
+        self.setup(tmx_map)
+
+    def setup(self, tmx_map):
+        for x, y, surf  in tmx_map.get_layer_by_name('Ground and platforms').tiles():
+            
 
 
 
@@ -243,6 +256,9 @@ class Main_character(pygame.sprite.Sprite):
          screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
          pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
+
+
+
 class Enemy02(pygame.sprite.Sprite):
     def __init__(self, char_type, x, y, scale, speed):
         pygame.sprite.Sprite.__init__(self)
@@ -263,7 +279,7 @@ class Enemy02(pygame.sprite.Sprite):
         self.move_counter = 0
         self.idling = False
         self.idle_counter = 0
-        self.vision = pygame.Rect(0, 0, 150, 20)
+        self.vision = pygame.Rect(0, 0, 50, 20)
         
         # Загружаем анимации
         animation_types = ['Idle', 'Run', 'Attack', 'Hit', 'Death']
@@ -333,9 +349,9 @@ class Enemy02(pygame.sprite.Sprite):
             if self.vision.colliderect(player.rect):
                 #attack
                 self.update_action(2)
-                self.attack_speed = self.speed * 1.5
+                self.attack_speed = self.speed * 1.2
 
-                if player.rect.centerx - self.rect.centerx > 15 or player.rect.centerx - self.rect.centerx < -15:
+                if player.rect.centerx - self.rect.centerx > 10 or player.rect.centerx - self.rect.centerx < 10:
                     if player.rect.centerx < self.rect.centerx:
                         self.move(True, False)
                     elif player.rect.centerx > self.rect.centerx:
@@ -343,6 +359,7 @@ class Enemy02(pygame.sprite.Sprite):
 
                  # Reset speed after the attack
                 self.attack_speed = self.speed
+                
 
             if self.idling == False:
                 if self.direction == 1:
@@ -495,6 +512,8 @@ item_box = ItemBox('Ammo', 400, 200)
 item_box_group.add(item_box)
 item_box = ItemBox('Diamond', 600, 200)
 item_box_group.add(item_box)
+
+level = Level(tmx_maps[0])
 
 
 player = Main_character('Gino Character', 200, 200, 1.65, 5, 20)

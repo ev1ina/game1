@@ -21,32 +21,33 @@
             "scaleInEditor": 1
         },
         "main_lev_build.tsx": {
-            "scaleInDock": 1,
+            "scaleInDock": 0.75,
             "scaleInEditor": 1.5
         },
         "test.tmx": {
             "scale": 2,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 246.5,
-                "y": 178.25
+                "x": 239.25,
+                "y": 130.25
             }
         }
     },
     "last.imagePath": "C:/Users/eveli/Desktop/game1/rocky/01. Rocky Level",
+    "map.height": 40,
     "map.lastUsedFormat": "tmx",
     "map.tileHeight": 16,
     "map.tileWidth": 16,
+    "map.width": 60,
     "openFiles": [
         "test.tmx",
-        "env_ground.tsx",
         "main_lev_build.tsx"
     ],
     "project": "untitled.tiled-project",
     "recentFiles": [
         "main_lev_build.tsx",
-        "env_ground.tsx",
         "test.tmx",
+        "env_ground.tsx",
         "ground_darkforest.tsx",
         "dark forest.tsx"
     ],
