@@ -61,19 +61,52 @@ def draw_text(text, foont, text_col, x, y):
 
 def draw_bg():
     screen.fill(BG)
-    pygame.draw.line(screen, RED, (0, 300), (SCREEN_WIDTH, 300))
 
 
 tmx_maps = {0: load_pygame('tiled/test.tmx')}
 
 class Level:
-    def __init__(self, tmx_map):
+    def __init__(self, tmx_map, scale_factor=2):
+        self.tmx_data = tmx_map
+        self.platforms = []  # Список для хранения прямоугольников платформ
+        self.scale_factor = scale_factor  # Определяем коэффициент масштабирования
 
-        self.setup(tmx_map)
+        # Извлечение прямоугольников платформ с учётом масштабирования
+        layer_name = "Ground and platforms"
+        layer = self.tmx_data.get_layer_by_name(layer_name)
 
-    def setup(self, tmx_map):
-        for x, y, surf  in tmx_map.get_layer_by_name('Ground and platforms').tiles():
-            
+        if layer and hasattr(layer, 'tiles'):
+            for x, y, surf in layer.tiles():
+                # Масштабируем изображение плитки
+                scaled_surf = pygame.transform.scale(
+                    surf,
+                    (int(surf.get_width() * self.scale_factor),
+                     int(surf.get_height() * self.scale_factor))
+                )
+                screen_x = x * TILE_SIZE * self.scale_factor
+                screen_y = y * TILE_SIZE * self.scale_factor
+                rect = pygame.Rect(screen_x, screen_y, TILE_SIZE * self.scale_factor, TILE_SIZE * self.scale_factor)
+                self.platforms.append(rect)
+
+    def draw(self, surface):
+        # Отрисовываем слой «Ground and Platforms»
+        layer_name = "Ground and platforms"
+        layer = self.tmx_data.get_layer_by_name(layer_name)
+
+        if layer and hasattr(layer, 'tiles'):
+            for x, y, surf in layer.tiles():
+                # Масштабируем изображение плитки
+                scaled_surf = pygame.transform.scale(
+                    surf,
+                    (int(surf.get_width() * self.scale_factor),
+                     int(surf.get_height() * self.scale_factor))
+                )
+                screen_x = x * TILE_SIZE * self.scale_factor
+                screen_y = y * TILE_SIZE * self.scale_factor
+                surface.blit(scaled_surf, (screen_x, screen_y))
+
+
+
 
 
 
@@ -145,7 +178,7 @@ class Main_character(pygame.sprite.Sprite):
 
 
 
-    def move(self, moving_left, moving_right):
+    def move(self, moving_left, moving_right, platforms):
         #reset movement variables
         dx = 0
         dy = 0
@@ -173,9 +206,24 @@ class Main_character(pygame.sprite.Sprite):
             self.vel_y = 10
         dy += self.vel_y #for jump
 
+        # Проверка столкновений с платформами
+        for platform in platforms:
+            # Проверка столкновений по оси Y
+            if self.rect.bottom + dy > platform.top and self.rect.bottom <= platform.top:
+                dy = platform.top - self.rect.bottom
+                self.in_air = False  # Игрок на земле
+                self.vel_y = 0
+
+            # Проверка столкновений по оси X
+            if self.rect.colliderect(platform):
+                if dx > 0:  # Движение вправо
+                    dx = platform.left - self.rect.right
+                elif dx < 0:  # Движение влево
+                    dx = platform.right - self.rect.left
+
         #check colision with floor
-        if self.rect.bottom + dy > 300:
-            dy = 300 - self.rect.bottom
+        if self.rect.bottom + dy > 500:
+            dy = 500 - self.rect.bottom
             self.in_air = False
 
 
@@ -254,7 +302,6 @@ class Main_character(pygame.sprite.Sprite):
 
     def draw(self):
          screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
-         pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
 
 
@@ -437,8 +484,6 @@ class Enemy02(pygame.sprite.Sprite):
     def draw(self):
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
 
-        pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
-
 
 class ItemBox(pygame.sprite.Sprite):
     def __init__(self, item_type, x, y):
@@ -513,7 +558,7 @@ item_box_group.add(item_box)
 item_box = ItemBox('Diamond', 600, 200)
 item_box_group.add(item_box)
 
-level = Level(tmx_maps[0])
+level = Level(tmx_maps[0], 1.5)
 
 
 player = Main_character('Gino Character', 200, 200, 1.65, 5, 20)
@@ -527,6 +572,8 @@ while run:
     clock.tick(FPS)
 
     draw_bg()
+
+    level.draw(screen)
 
     #show diamondes
     draw_text('DIAMONDES: ',font, WHITE, 10, 35)
@@ -583,7 +630,7 @@ while run:
             player.update_action(1) # 1 on jooksemine
         else:
             player.update_action(0) #0 is idle
-        player.move(moving_left, moving_right)
+        player.move(moving_left, moving_right, level.platforms)
 
     for event in pygame.event.get():
         #quit game
