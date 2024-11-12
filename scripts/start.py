@@ -7,6 +7,8 @@ pygame.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
 
+TILE_SIZE = 1
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Shooter')
 
@@ -24,20 +26,40 @@ shoot = False
 
 
 #load images
-dagger_img = pygame.image.load('rocky/Sprites/Gino Character/PNG/dagger/1.png'). convert_alpha()
+dagger_img = pygame.image.load('rocky/Sprites/Gino Character/PNG/dagger/1.png').convert_alpha()
 dagger_img2 = pygame.transform.scale(dagger_img, (int(dagger_img.get_width() * 2), int(dagger_img.get_height() * 2)))
+
+#pick up boxes
+diamond_box_img = pygame.image.load('rocky/Collectible/Diamond/1.png').convert_alpha()
+dag1_box_img = pygame.image.load('rocky/Collectible/Dag/1.png').convert_alpha()
+dag_box_img = pygame.transform.scale(dag1_box_img, (int(dag1_box_img.get_width() * 2), int(dag1_box_img.get_height() * 2)))
+heart_box_img = pygame.image.load('rocky/Collectible/Heart/1.png').convert_alpha()
+
+item_boxes ={
+    "Health"    : heart_box_img,
+    "Ammo"      : dag_box_img,
+    "Diamond"   : diamond_box_img
+}
 
 
 #define colours
 BG = (144, 201, 120)
 RED = (255, 0, 0)
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+BLACK = (0, 0, 0)
+
+#define font
+font = pygame.font.SysFont('Futura', 30)
+
+def draw_text(text, foont, text_col, x, y):
+    img = font.render(text, True, text_col)
+    screen.blit(img, (x, y))
 
 
 def draw_bg():
     screen.fill(BG)
     pygame.draw.line(screen, RED, (0, 300), (SCREEN_WIDTH, 300))
-
-
 
 
 
@@ -49,6 +71,7 @@ class Main_character(pygame.sprite.Sprite):
         self.char_type = char_type
         self.speed = speed
         self.ammo = ammo
+        self.diamondes = 0
         self.start_ammo = ammo
         self.shoot_cooldown = 0
         self.health = 100
@@ -63,9 +86,11 @@ class Main_character(pygame.sprite.Sprite):
         self.frame_index = 0
         self.action = 0
         self.update_time = pygame.time.get_ticks()
+        self.damage_cooldown = 1000  # 1 sekund (1000 ms) vahe kokkupõrke kahju vahel
+        self.last_damage_time = pygame.time.get_ticks()  # algne viide ajale
 
         #load all images for the player
-        animation_types = ['Idle','Run','Jump', 'Throw attack', 'Death']
+        animation_types = ['Idle','Run','Jump', 'Throw attack', 'Death', 'Hit']
         for animation in animation_types:
             #reset temporary list of img
             temp_list = []
@@ -149,24 +174,55 @@ class Main_character(pygame.sprite.Sprite):
             dagger_group.add(dagger)
             self.ammo -= 1
 
+    def get_diamondes(self):
+        pass
+
+    def take_damage(self, damage):
+        current_time = pygame.time.get_ticks()
+        # Kontrollime, kas piisavalt aega on möödunud, et kahju võtta
+        if current_time - self.last_damage_time > self.damage_cooldown:
+            self.health -= damage
+            self.last_damage_time = current_time  # Uuendame viimast kahju aega
+            self.taking_damage = True  # Märgime, et tegelane võtab kahju
+            # Kui tervis on suurem kui 0, alustame "Hit" animatsiooni
+            if self.health > 0:
+                self.update_action(5)  # 5 - "Hit" animatsioon
+            else:
+                # Kui tervis on null või väiksem, alustame "Death" animatsiooni
+                self.health = 0
+                self.alive = False
+                self.update_action(4)  # 4 - "Death" animatsioon
+
+
+
+
         
 
     def update_animation(self):
-        #update animation
-        ANIMATION_COOLDOWN = 100 #speed of anim
-        #update img depending on current frame
+        ANIMATION_COOLDOWN = 100  # animatsiooni kiirus
+
+        if self.frame_index >= len(self.animation_list[self.action]):
+            self.frame_index = len(self.animation_list[self.action]) - 1
+
         self.image = self.animation_list[self.action][self.frame_index]
-        #check if enough time has passed since thr last update
+
+        # Kontrollime, kas piisavalt aega on möödunud
         if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
             self.update_time = pygame.time.get_ticks()
             self.frame_index += 1
 
-        #if anim has run out the reset back to the start
-        if self.frame_index  >= len(self.animation_list[self.action]):
-            self.frame_index = 0
+            # Kui "Hit" animatsioon on lõppenud, läheme tagasi "Idle" animatsioonile
+            if self.action == 5 and self.frame_index >= len(self.animation_list[5]):
+                self.update_action(0)  # 0 - "Idle" animatsioon
+                self.taking_damage = False  # Lõpetame kahju võtmise oleku
 
+            # Kui tegevus on "Death" ja oleme jõudnud viimase kaadrini, peatame animatsiooni
+            elif self.action == 4 and self.frame_index >= len(self.animation_list[4]) - 1:
+                self.frame_index = len(self.animation_list[4]) - 1  # Peatume viimase kaadri juures
 
-
+            # Ülejäänud tegevused, nagu Run või Idle, jätkuvad loopitult
+            elif self.frame_index >= len(self.animation_list[self.action]):
+                self.frame_index = 0  # Taaskäivita animatsioon
 
 
 
@@ -190,10 +246,6 @@ class Main_character(pygame.sprite.Sprite):
 
     def draw(self):
          screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
-
-
-import pygame
-import os
 
 class Enemy02(pygame.sprite.Sprite):
     def __init__(self, char_type, x, y, scale, speed):
@@ -293,7 +345,45 @@ class Enemy02(pygame.sprite.Sprite):
     def draw(self):
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
 
-         
+
+class ItemBox(pygame.sprite.Sprite):
+    def __init__(self, item_type, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.item_type = item_type
+        self.image = item_boxes[self.item_type]
+        self.rect = self.image.get_rect()
+        self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
+
+    def update(self):
+        #check if the player has picked up the box
+        if pygame.sprite.collide_rect(self, player):
+            # check what kind of box it was
+            if self.item_type == 'Health':
+                player.health += 25
+            if player.health > player.max_health:
+                player.health = player.max_health
+            elif self.item_type == 'Ammo':
+                player.ammo += 15
+            elif self.item_type == 'Diamond':
+                player.diamondes += 3
+            #delete the item box
+            self.kill()
+
+class HeathBar():
+    def __init__(self, x, y, health, max_health):
+        self.x = x
+        self.y = self.health = health
+        self.max_health = max_health
+
+    def draw(self, health):
+        #update wirh new health
+        self.health = health
+        #calculate health ratio
+        ratio = self.health / self.max_health
+        pygame.draw.rect(screen, BLACK, (self.x - 2, self.y - 2, 154, 24))
+        pygame.draw.rect(screen, RED, (self.x, self.y, 150, 20))
+        pygame.draw.rect(screen, GREEN, (self.x, self.y, 150 * ratio, 20))
+
          
 class Dagger(pygame.sprite.Sprite):
     def __init__(self, x, y, direction):
@@ -316,10 +406,22 @@ class Dagger(pygame.sprite.Sprite):
 
 #create sprite groups
 dagger_group = pygame.sprite.Group()
-
 enemy_group = pygame.sprite.Group()
-         
+item_box_group = pygame.sprite.Group()
+
+
+
+#temp -create item boxes
+item_box = ItemBox('Health', 100, 300)
+item_box_group.add(item_box)
+item_box = ItemBox('Ammo', 400, 300)
+item_box_group.add(item_box)
+item_box = ItemBox('Diamond', 600, 300)
+item_box_group.add(item_box)
+
+
 player = Main_character('Gino Character', 200, 200, 2, 5, 20)
+health_bar = HeathBar(10, 10, player.health, player.health)
 enemy = Enemy02('Enemy02', 300, 200, 2, 10)
 enemy_group.add(enemy)
 
@@ -330,24 +432,50 @@ while run:
 
     draw_bg()
 
+    #show diamondes
+    draw_text('DIAMONDES: ',font, WHITE, 10, 35)
+    for x in range(player.diamondes):
+        screen.blit(diamond_box_img, (160 + (x * 25), 37 ))
+    #show health
+    health_bar.draw(player.health)
+    #draw_text('HEALTH: ',font, WHITE, 10, 60)
+    #for x in range(player.health):
+        #screen.blit(heart_box_img, (115 + (x * 15), 62))
+    #show ammo
+    draw_text('AMMO: ',font, WHITE, 10, 65)
+    for x in range(player.ammo):
+        screen.blit(dag1_box_img, (100 + (x * 10), 67))
+
     player.update()
     player.draw()
 
     
+    for enemy in enemy_group:
+        enemy.update()
+        enemy.draw()
+        # Kontrollime, kas kahju võtmine on lubatud
+        if pygame.sprite.collide_rect(player, enemy) and player.alive and enemy.alive:
+            player.take_damage(10)
 
-    enemy_group.update()
-    enemy_group.draw(screen)
+
+
+    if pygame.sprite.collide_rect(player, enemy) and player.alive and enemy.alive:
+            player.take_damage(10)
 
     for dagger in dagger_group:
         if pygame.sprite.collide_rect(dagger, enemy) and enemy.alive:
             enemy.take_damage(25)
             dagger.kill()
+    
+    
 
 
 
     #update and draw groups
     dagger_group.update()
+    item_box_group.update()
     dagger_group.draw(screen)
+    item_box_group.draw(screen)
 
 
     #update player action
