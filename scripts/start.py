@@ -6,8 +6,8 @@ from pytmx.util_pygame import load_pygame
 pygame.init()
 
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 540
+SCREEN_WIDTH = 1000
+SCREEN_HEIGHT = 600
 
 TILE_SIZE = 16
 
@@ -63,39 +63,40 @@ def draw_bg():
     screen.fill(BG)
 
 
-tmx_maps = {0: load_pygame('tiled/test.tmx')}
+tmx_maps = {0: load_pygame('tiled/test2.tmx')}
+
+
 
 class Level:
     def __init__(self, tmx_map, scale_factor=2):
         self.tmx_data = tmx_map
-        self.platforms = []  # Список для хранения прямоугольников платформ
-        self.scale_factor = scale_factor  # Определяем коэффициент масштабирования
+        self.platforms = []  # List to store platform rectangles
+        self.scale_factor = scale_factor  # Define scaling factor
 
-        # Извлечение прямоугольников платформ с учётом масштабирования
-        layer_name = "Ground and platforms"
+        # Extract platform rectangles with the correct scaling
+        layer_name = "border"
         layer = self.tmx_data.get_layer_by_name(layer_name)
 
         if layer and hasattr(layer, 'tiles'):
             for x, y, surf in layer.tiles():
-                # Масштабируем изображение плитки
-                scaled_surf = pygame.transform.scale(
-                    surf,
-                    (int(surf.get_width() * self.scale_factor),
-                     int(surf.get_height() * self.scale_factor))
-                )
+                # Scale tile image and position
                 screen_x = x * TILE_SIZE * self.scale_factor
                 screen_y = y * TILE_SIZE * self.scale_factor
-                rect = pygame.Rect(screen_x, screen_y, TILE_SIZE * self.scale_factor, TILE_SIZE * self.scale_factor)
+                width = TILE_SIZE * self.scale_factor
+                height = TILE_SIZE * self.scale_factor
+                rect = pygame.Rect(screen_x, screen_y, width, height)
+                
+                # Append each platform rect to the list
                 self.platforms.append(rect)
 
     def draw(self, surface):
-        # Отрисовываем слой «Ground and Platforms»
-        layer_name = "Ground and platforms"
+        # Draw the "Ground and Platforms" layer with scaling
+        layer_name = "border"
         layer = self.tmx_data.get_layer_by_name(layer_name)
 
         if layer and hasattr(layer, 'tiles'):
             for x, y, surf in layer.tiles():
-                # Масштабируем изображение плитки
+                # Scale tile image consistently
                 scaled_surf = pygame.transform.scale(
                     surf,
                     (int(surf.get_width() * self.scale_factor),
@@ -104,6 +105,12 @@ class Level:
                 screen_x = x * TILE_SIZE * self.scale_factor
                 screen_y = y * TILE_SIZE * self.scale_factor
                 surface.blit(scaled_surf, (screen_x, screen_y))
+
+        # Draw platform rectangles for debugging
+        for platform in self.platforms:
+            pygame.draw.rect(surface, (255, 0, 0), platform, 1)  # Red outline for platforms
+
+
 
 
 
@@ -147,12 +154,20 @@ class Main_character(pygame.sprite.Sprite):
             for i in range(num_of_frames):
                 img = pygame.image.load(f'rocky/Sprites/{self.char_type}/PNG/{animation}/{i+1}.png').convert_alpha()
                 img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
+                #img_mask = pygame.mask.from_surface(img)
+                #mask_image = img_mask.to_surface()
                 temp_list.append(img)
             self.animation_list.append(temp_list)
         
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center = (x,y)
+
+
+        self.collision_rect = pygame.Rect(
+                self.rect.x +10 , self.rect.y +30,  # Adjust the position (inset)
+                self.rect.width - 60, self.rect.height -35 # Adjust the size
+            )
 
     def update(self):
         self.update_animation()
@@ -171,8 +186,14 @@ class Main_character(pygame.sprite.Sprite):
 
         #check collision with characters потом закинь на enemies
         
-        if self.alive and enemy.alive and pygame.sprite.collide_rect(self, enemy):
+            if self.alive and enemy.alive and self.collision_rect.colliderect(enemy.collision_rect):
                 self.take_damage(10)
+
+        if self.direction == 1:  # Facing right
+            self.collision_rect.topleft = (self.rect.x + 10, self.rect.y + 35)
+        else:  # Facing left
+            self.collision_rect.topleft = (self.rect.x + 45, self.rect.y + 35)  # Adjust the x-value for left-facing
+
 
 
 
@@ -206,30 +227,20 @@ class Main_character(pygame.sprite.Sprite):
             self.vel_y = 10
         dy += self.vel_y #for jump
 
-        # Проверка столкновений с платформами
-        for platform in platforms:
-            # Проверка столкновений по оси Y
-            if self.rect.bottom + dy > platform.top and self.rect.bottom <= platform.top:
-                dy = platform.top - self.rect.bottom
-                self.in_air = False  # Игрок на земле
-                self.vel_y = 0
-
-            # Проверка столкновений по оси X
-            if self.rect.colliderect(platform):
-                if dx > 0:  # Движение вправо
-                    dx = platform.left - self.rect.right
-                elif dx < 0:  # Движение влево
-                    dx = platform.right - self.rect.left
-
-        #check colision with floor
-        if self.rect.bottom + dy > 500:
-            dy = 500 - self.rect.bottom
+        # check collision with floor
+        if self.rect.bottom + dy > 200:
+            dy = 200 - self.rect.bottom
             self.in_air = False
-
+        else:
+            self.in_air = True
 
         #update rectangle position
         self.rect.x += dx
         self.rect.y += dy
+
+
+        
+
 
     def shoot(self):
         if self.shoot_cooldown == 0 and self.ammo > 0:
@@ -302,8 +313,8 @@ class Main_character(pygame.sprite.Sprite):
 
     def draw(self):
          screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
-
-
+        # Draw the collision rectangle for debugging
+         pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)  # Red outline for collision rect
 
 
 class Enemy02(pygame.sprite.Sprite):
@@ -345,9 +356,16 @@ class Enemy02(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
 
+        self.collision_rect = pygame.Rect(
+                self.rect.x +10 , self.rect.y +10,  # Adjust the position (inset)
+                self.rect.width - 10, self.rect.height -10 # Adjust the size
+            )
+
     def update(self):
         self.update_animation()
         self.check_alive()
+
+        self.collision_rect.topleft = (self.rect.x + 10, self.rect.y + 10)
 
 
     def move(self, moving_left, moving_right):
@@ -373,8 +391,8 @@ class Enemy02(pygame.sprite.Sprite):
         dy += self.vel_y  # Apply gravity to dy
 
         # check collision with floor
-        if self.rect.bottom + dy > 300:
-            dy = 300 - self.rect.bottom
+        if self.rect.bottom + dy > 200:
+            dy = 200 - self.rect.bottom
             self.in_air = False
         else:
             self.in_air = True
@@ -422,7 +440,7 @@ class Enemy02(pygame.sprite.Sprite):
                 self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
                 #pygame.draw.rect(screen, RED, self.vision)
 
-                if self.move_counter > TILE_SIZE:
+                if self.move_counter > 100: #TILE_SIZE:
                     self.direction *= -1
                     self.move_counter *= -1
 
@@ -483,6 +501,7 @@ class Enemy02(pygame.sprite.Sprite):
 
     def draw(self):
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
+        pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)  # Red outline for collision rect
 
 
 class ItemBox(pygame.sprite.Sprite):
@@ -558,7 +577,7 @@ item_box_group.add(item_box)
 item_box = ItemBox('Diamond', 600, 200)
 item_box_group.add(item_box)
 
-level = Level(tmx_maps[0], 1.5)
+level = Level(tmx_maps[0], 1)
 
 
 player = Main_character('Gino Character', 200, 200, 1.65, 5, 20)
