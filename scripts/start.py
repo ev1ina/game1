@@ -1,14 +1,17 @@
-import pygame, csv
+import pygame, sys
 import os
 import random
-
+from pytmx.util_pygame import load_pygame
 
 pygame.init()
 
 
-SCREEN_WIDTH = 1500
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = 1000
+SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 520
 
+TILE_SIZE = 16
 TILE_SIZE = 15
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -37,18 +40,11 @@ dag1_box_img = pygame.image.load('rocky/Collectible/Dag/1.png').convert_alpha()
 dag_box_img = pygame.transform.scale(dag1_box_img, (int(dag1_box_img.get_width() * 2), int(dag1_box_img.get_height() * 2)))
 heart_box_img = pygame.image.load('rocky/Collectible/Heart/1.png').convert_alpha()
 
-tiles = pygame.image.load('rocky/01. Rocky Level/t_ground.png').convert_alpha()
-tiles2 = pygame.transform.scale(tiles, (int(tiles.get_width() * 2), int(tiles.get_height() * 2)))
-
-
 item_boxes ={
     "Health"    : heart_box_img,
     "Ammo"      : dag_box_img,
     "Diamond"   : diamond_box_img
 }
-
-
-
 
 
 #define colours
@@ -67,76 +63,67 @@ def draw_text(text, foont, text_col, x, y):
 
 
 def draw_bg():
+    screen.fill(BG)
     screen.fill(BLACK)
 
 
-
-#creating camera, peremesti potom v podhodjasee mesto
-
-scroll_x = 0
+tmx_maps = {0: load_pygame('tiled/test2.tmx')}
 
 
-class Tile(pygame.sprite.Sprite):
-    def __init__(self, image, x, y):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = image
-        self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = x, y
+
+class Level:
+    def __init__(self, tmx_map, scale_factor=2, layer_names=None):
+        self.tmx_data = tmx_map
+        self.platforms = []  # List to store platform rectangles
+        self.scale_factor = scale_factor  # Define scaling factor
+        # Extract platform rectangles with the correct scaling
+        layer_name = "border"
+        layer = self.tmx_data.get_layer_by_name(layer_name)
+        if layer and hasattr(layer, 'tiles'):
+            for x, y, surf in layer.tiles():
+                # Scale tile image and position
+                screen_x = x * TILE_SIZE * self.scale_factor
+                screen_y = y * TILE_SIZE * self.scale_factor
+                width = TILE_SIZE * self.scale_factor
+                height = TILE_SIZE * self.scale_factor
+                rect = pygame.Rect(screen_x, screen_y, width, height)
+                
+                # Append each platform rect to the list
+                self.platforms.append(rect)
+        self.scale_factor = scale_factor
+        self.layer_names = layer_names  # Store layer names to be drawn
 
     def draw(self, surface):
-        surface.blit(self.image, (self.rect.x, self.rect.y))
-
-
-class TileMap():
-    def __init__(self, filename):
-        self.tile_size = 16
-        self.start_x, self.start_y = 0, 0
-        self.tiles = self.load_tiles(filename)
-        self.map_surface = pygame.Surface((self.map_w, self.map_h))
-        self.map_surface.set_colorkey((0, 0, 0)) # with it wil be probles in animation...
-        self.load_map()
-
-
-    def draw_map(self, screen):
-        screen.blit(self.map_surface, (0, 0))
-
-    def load_map(self):
-        for tile in self.tiles:
-            tile.draw(self.map_surface)
-
-
-        
-    def read_csv(self, filename):
-        map = []
-        with open(filename) as data:
-            data = csv.reader(data,delimiter=',')
-            for row in data:
-                map.append(list(row))
-
-        return map
-    
-    def load_tiles(self, filename):
-        tiles = []
-        map = self.read_csv(filename)
-        x, y = 0, 0
-        for row in map:
-            x = 0
-            for tile in row:
-                if tile == '1493' or tile == '1494':
-                    tiles.append(Tile(tiles2, x * self.tile_size, y * self.tile_size))
-                elif tile == '968' or tile == '969':  # Add support for other tiles
-                    tiles.append(Tile(tiles2, x * self.tile_size, y * self.tile_size))
-                # Move to next tile in the current row
-                x += 1
-            # Move to the next row
-            y += 1
-   
-    
-            # Store the size of the tile map
-        self.map_w, self.map_h = x * self.tile_size, y * self.tile_size
-        return tiles
-
-
+        # Draw the "Ground and Platforms" layer with scaling
+        layer_name = "border"
+        layer = self.tmx_data.get_layer_by_name(layer_name)
+        if layer and hasattr(layer, 'tiles'):
+            for x, y, surf in layer.tiles():
+                # Scale tile image consistently
+                scaled_surf = pygame.transform.scale(
+                    surf,
+                    (int(surf.get_width() * self.scale_factor),
+                     int(surf.get_height() * self.scale_factor))
+                )
+                screen_x = x * TILE_SIZE * self.scale_factor
+                screen_y = y * TILE_SIZE * self.scale_factor
+                surface.blit(scaled_surf, (screen_x, screen_y))
+        # Draw platform rectangles for debugging
+        for platform in self.platforms:
+            pygame.draw.rect(surface, (255, 0, 0), platform, 1)  # Red outline for platforms
+        # Draw each specified layer
+        for layer_name in self.layer_names:
+            layer = self.tmx_data.get_layer_by_name(layer_name)
+            if layer and hasattr(layer, 'tiles'):
+                for x, y, surf in layer.tiles():
+                    # Scale tile image and position
+                    scaled_surf = pygame.transform.scale(
+                        surf,
+                        (int(surf.get_width() * self.scale_factor), int(surf.get_height() * self.scale_factor))
+                    )
+                    screen_x = x * TILE_SIZE * self.scale_factor
+                    screen_y = y * TILE_SIZE * self.scale_factor
+                    surface.blit(scaled_surf, (screen_x, screen_y))
 
 
 
@@ -183,7 +170,7 @@ class Main_character(pygame.sprite.Sprite):
                 #mask_image = img_mask.to_surface()
                 temp_list.append(img)
             self.animation_list.append(temp_list)
-        
+
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center = (x,y)
@@ -210,7 +197,7 @@ class Main_character(pygame.sprite.Sprite):
                 self.update_action(0)  # Возвращаемся к idle
 
         #check collision with characters потом закинь на enemies
-        
+
         if self.alive and enemy.alive and self.collision_rect.colliderect(enemy.collision_rect):
             self.take_damage(10)
 
@@ -224,6 +211,7 @@ class Main_character(pygame.sprite.Sprite):
 
 
 
+    #def move(self, moving_left, moving_right, platforms):
     def move(self, moving_left, moving_right):
         #reset movement variables
         dx = 0
@@ -253,6 +241,8 @@ class Main_character(pygame.sprite.Sprite):
         dy += self.vel_y #for jump
 
         # check collision with floor
+        if self.rect.bottom + dy > 200:
+            dy = 200 - self.rect.bottom
         if self.rect.bottom + dy > 500:
             dy = 500 - self.rect.bottom
             self.in_air = False
@@ -264,7 +254,7 @@ class Main_character(pygame.sprite.Sprite):
         self.rect.y += dy
 
 
-        
+
 
 
     def shoot(self):
@@ -291,7 +281,7 @@ class Main_character(pygame.sprite.Sprite):
 
 
 
-        
+
 
     def update_animation(self):
         ANIMATION_COOLDOWN = 100  # animatsiooni kiirus
@@ -362,6 +352,8 @@ class Enemy02(pygame.sprite.Sprite):
         self.move_counter = 0
         self.idling = False
         self.idle_counter = 0
+        self.vision = pygame.Rect(0, 0, 50, 20)
+        
         self.vision = pygame.Rect(0, 0, 70, 20)        
         # Загружаем анимации
         animation_types = ['Idle', 'Run', 'Attack', 'Hit', 'Death']
@@ -415,6 +407,8 @@ class Enemy02(pygame.sprite.Sprite):
         dy += self.vel_y  # Apply gravity to dy
 
         # check collision with floor
+        if self.rect.bottom + dy > 200:
+            dy = 200 - self.rect.bottom
         if self.rect.bottom + dy > 500:
             dy = 500 - self.rect.bottom
             self.in_air = False
@@ -424,7 +418,7 @@ class Enemy02(pygame.sprite.Sprite):
         # update rectangle position
         self.rect.x += dx
         self.rect.y += dy
-            
+
 
 
     def ai(self):
@@ -435,12 +429,13 @@ class Enemy02(pygame.sprite.Sprite):
                 self.idle_counter = 50
 
             #chek if near
+            if self.vision.colliderect(player.rect):
             if self.vision.colliderect(player.collision_rect):
                 #attack
                 self.update_action(2)
                 self.attack_speed = self.speed * 1.2
 
-        
+
 
                 if player.collision_rect.centerx - self.collision_rect.centerx > 10 or player.collision_rect.centerx - self.collision_rect.centerx < 10:
                     if player.collision_rect.centerx < self.collision_rect.centerx:
@@ -450,7 +445,7 @@ class Enemy02(pygame.sprite.Sprite):
 
                  # Reset speed after the attack
                 self.attack_speed = self.speed
-                
+
 
             if self.idling == False:
                 if self.direction == 1:
@@ -531,7 +526,6 @@ class Enemy02(pygame.sprite.Sprite):
         pygame.draw.rect(screen, RED, self.vision, 1)  # Red outline for collision rect
 
 
-
 class ItemBox(pygame.sprite.Sprite):
     def __init__(self, item_type, x, y):
         pygame.sprite.Sprite.__init__(self)
@@ -570,7 +564,7 @@ class HeathBar():
         pygame.draw.rect(screen, RED, (self.x, self.y, 150, 20))
         pygame.draw.rect(screen, GREEN, (self.x, self.y, 150 * ratio, 20))
 
-         
+
 class Dagger(pygame.sprite.Sprite):
     def __init__(self, x, y, direction):
         pygame.sprite.Sprite.__init__(self)
@@ -587,15 +581,6 @@ class Dagger(pygame.sprite.Sprite):
         if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH - 100:
             self.kill()
 
-    def __init__(self, width, height):
-        self.camera_rect = pygame.Rect(0, 0, width, height)
-        self.width = width
-        self.height = height
-
-
-
-
-map = TileMap("C:/Users/eveli/Desktop/game1/scripts/test3.csv")
 
 
 
@@ -603,18 +588,22 @@ map = TileMap("C:/Users/eveli/Desktop/game1/scripts/test3.csv")
 dagger_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 item_box_group = pygame.sprite.Group()
-#creating camera, peremesti potom v podhodjasee mesto
 
 
 
 #temp -create item boxes
+item_box = ItemBox('Health', 100, 200)
 item_box = ItemBox('Health', 100, 450)
 item_box_group.add(item_box)
+item_box = ItemBox('Ammo', 400, 200)
 item_box = ItemBox('Ammo', 400, 450)
 item_box_group.add(item_box)
+item_box = ItemBox('Diamond', 600, 200)
 item_box = ItemBox('Diamond', 600, 450)
 item_box_group.add(item_box)
 
+level = Level(tmx_maps[0], 1)
+level = Level(tmx_maps[0], scale_factor=1.5, layer_names=["background", "border"])
 
 
 player = Main_character('Gino Character', 200, 200, 1.65, 5, 20)
@@ -622,17 +611,14 @@ health_bar = HeathBar(10, 10, player.health, player.health)
 enemy = Enemy02('Enemy02', 300, 200, 1.65, 2)
 enemy_group.add(enemy)
 
-
-
 run = True
 while run:
 
     clock.tick(FPS)
 
-    map.draw_map(screen)
     draw_bg()
 
-
+    level.draw(screen)
 
     #show diamondes
     draw_text('DIAMONDES: ',font, WHITE, 10, 35)
@@ -652,24 +638,17 @@ while run:
     player.draw()
 
 
-    
     for enemy in enemy_group:
         enemy.ai()
         enemy.update()
         enemy.draw()
 
-        
 
     for dagger in dagger_group:
         if pygame.sprite.collide_rect(dagger, enemy) and enemy.alive:
             enemy.take_damage(25)
             dagger.kill()
-    
-    # Update and draw item boxes and daggers with camera offset
-    for item in item_box_group:
-        item.update()
-    for dagger in dagger_group:
-        dagger.update()
+
 
 
 
@@ -696,6 +675,7 @@ while run:
             player.update_action(1) # 1 on jooksemine
         else:
             player.update_action(0) #0 is idle
+        player.move(moving_left, moving_right, level.platforms)
         player.move(moving_left, moving_right)
 
     for event in pygame.event.get():
@@ -725,6 +705,3 @@ while run:
                 shoot = False
 
     pygame.display.update()
-
-
-pygame.quit()
