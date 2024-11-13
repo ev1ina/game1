@@ -66,6 +66,11 @@ def draw_bg():
 tmx_maps = {0: load_pygame('tiled/test2.tmx')}
 
 
+#creating camera, peremesti potom v podhodjasee mesto
+camera_group = pygame.sprite.Group()
+
+
+
 
 class Level:
     def __init__(self, tmx_map, scale_factor=2, layer_names=None):
@@ -537,6 +542,34 @@ class Dagger(pygame.sprite.Sprite):
         if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH - 100:
             self.kill()
 
+class Camera:
+    def __init__(self, width, height):
+        self.camera_rect = pygame.Rect(0, 0, width, height)
+        self.width = width
+        self.height = height
+
+    def apply(self, entity):
+        # Directly apply the camera offset for pygame.Rect objects
+        if isinstance(entity, pygame.Rect):
+            return entity.move(self.camera_rect.topleft)
+        # Otherwise, apply the offset based on collision_rect or rect
+        if hasattr(entity, 'collision_rect'):
+            return entity.collision_rect.move(self.camera_rect.topleft)
+        return entity.rect.move(self.camera_rect.topleft)
+
+    def update(self, target):
+        target_rect = target.collision_rect if hasattr(target, 'collision_rect') else target.rect
+        x = -target_rect.centerx + SCREEN_WIDTH // 2
+        y = -target_rect.centery + SCREEN_HEIGHT // 2
+
+        # Limit scrolling to map boundaries
+        x = min(0, x)  # Left boundary
+        y = min(0, y)  # Top boundary
+        x = max(-(self.width - SCREEN_WIDTH), x)  # Right boundary
+        y = max(-(self.height - SCREEN_HEIGHT), y)  # Bottom boundary
+
+        self.camera_rect = pygame.Rect(x, y, self.width, self.height)
+
 
 
 
@@ -544,6 +577,8 @@ class Dagger(pygame.sprite.Sprite):
 dagger_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 item_box_group = pygame.sprite.Group()
+#creating camera, peremesti potom v podhodjasee mesto
+camera_group = pygame.sprite.Group()
 
 
 
@@ -559,9 +594,14 @@ level = Level(tmx_maps[0], scale_factor=1.5, layer_names=["background", "border"
 
 
 player = Main_character('Gino Character', 200, 200, 1.65, 5, 20)
+camera_group.add(player)
 health_bar = HeathBar(10, 10, player.health, player.health)
 enemy = Enemy02('Enemy02', 300, 200, 1.65, 2)
 enemy_group.add(enemy)
+
+camera = Camera(level.tmx_data.width * TILE_SIZE * level.scale_factor,
+        level.tmx_data.height * TILE_SIZE * level.scale_factor)
+
 
 run = True
 while run:
@@ -569,6 +609,22 @@ while run:
     clock.tick(FPS)
 
     draw_bg()
+
+    camera.update(player)
+
+    for layer_name in level.layer_names:
+        layer = level.tmx_data.get_layer_by_name(layer_name)
+        if layer and hasattr(layer, 'tiles'):
+            for x, y, surf in layer.tiles():
+                scaled_surf = pygame.transform.scale(
+                    surf,
+                    (int(surf.get_width() * level.scale_factor),
+                     int(surf.get_height() * level.scale_factor))
+                )
+                screen_x = x * TILE_SIZE * level.scale_factor
+                screen_y = y * TILE_SIZE * level.scale_factor
+                screen.blit(scaled_surf, camera.apply(pygame.Rect(screen_x, screen_y, TILE_SIZE, TILE_SIZE)))
+
 
     level.draw(screen)
 
@@ -588,12 +644,16 @@ while run:
 
     player.update()
     player.draw()
+    screen.blit(pygame.transform.flip(player.image, player.flip, False), camera.apply(player))
+
 
     
     for enemy in enemy_group:
         enemy.ai()
         enemy.update()
         enemy.draw()
+        screen.blit(enemy.image, camera.apply(enemy))
+
         
 
     for dagger in dagger_group:
@@ -601,7 +661,14 @@ while run:
             enemy.take_damage(25)
             dagger.kill()
     
-    
+    # Update and draw item boxes and daggers with camera offset
+    for item in item_box_group:
+        item.update()
+        screen.blit(item.image, camera.apply(item))
+    for dagger in dagger_group:
+        dagger.update()
+        screen.blit(dagger.image, camera.apply(dagger))
+
 
 
 
