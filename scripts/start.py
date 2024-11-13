@@ -1,13 +1,13 @@
-import pygame, sys
+import pygame, csv
 import os
 import random
-from pytmx.util_pygame import load_pygame
+
 
 pygame.init()
 
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 520
+SCREEN_WIDTH = 1500
+SCREEN_HEIGHT = 800
 
 TILE_SIZE = 15
 
@@ -37,11 +37,18 @@ dag1_box_img = pygame.image.load('rocky/Collectible/Dag/1.png').convert_alpha()
 dag_box_img = pygame.transform.scale(dag1_box_img, (int(dag1_box_img.get_width() * 2), int(dag1_box_img.get_height() * 2)))
 heart_box_img = pygame.image.load('rocky/Collectible/Heart/1.png').convert_alpha()
 
+tiles = pygame.image.load('rocky/01. Rocky Level/t_ground.png').convert_alpha()
+tiles2 = pygame.transform.scale(tiles, (int(tiles.get_width() * 2), int(tiles.get_height() * 2)))
+
+
 item_boxes ={
     "Health"    : heart_box_img,
     "Ammo"      : dag_box_img,
     "Diamond"   : diamond_box_img
 }
+
+
+
 
 
 #define colours
@@ -67,6 +74,72 @@ def draw_bg():
 #creating camera, peremesti potom v podhodjasee mesto
 
 scroll_x = 0
+
+
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, image, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = x, y
+
+    def draw(self, surface):
+        surface.blit(self.image, (self.rect.x, self.rect.y))
+
+
+class TileMap():
+    def __init__(self, filename):
+        self.tile_size = 16
+        self.start_x, self.start_y = 0, 0
+        self.tiles = self.load_tiles(filename)
+        self.map_surface = pygame.Surface((self.map_w, self.map_h))
+        self.map_surface.set_colorkey((0, 0, 0)) # with it wil be probles in animation...
+        self.load_map()
+
+
+    def draw_map(self, screen):
+        screen.blit(self.map_surface, (0, 0))
+
+    def load_map(self):
+        for tile in self.tiles:
+            tile.draw(self.map_surface)
+
+
+        
+    def read_csv(self, filename):
+        map = []
+        with open(filename) as data:
+            data = csv.reader(data,delimiter=',')
+            for row in data:
+                map.append(list(row))
+
+        return map
+    
+    def load_tiles(self, filename):
+        tiles = []
+        map = self.read_csv(filename)
+        x, y = 0, 0
+        for row in map:
+            x = 0
+            for tile in row:
+                if tile == '1493' or tile == '1494':
+                    tiles.append(Tile(tiles2, x * self.tile_size, y * self.tile_size))
+                elif tile == '968' or tile == '969':  # Add support for other tiles
+                    tiles.append(Tile(tiles2, x * self.tile_size, y * self.tile_size))
+                # Move to next tile in the current row
+                x += 1
+            # Move to the next row
+            y += 1
+   
+    
+            # Store the size of the tile map
+        self.map_w, self.map_h = x * self.tile_size, y * self.tile_size
+        return tiles
+
+
+
+
+
 
 
 
@@ -95,7 +168,6 @@ class Main_character(pygame.sprite.Sprite):
         self.update_time = pygame.time.get_ticks()
         self.damage_cooldown = 1000  # 1 sekund (1000 ms) vahe kokkupõrke kahju vahel
         self.last_damage_time = pygame.time.get_ticks()  # algne viide ajale
-        self.scroll_x = 0
 
         #load all images for the player
         animation_types = ['Idle','Run','Jump', 'Throw attack', 'Death', 'Hit']
@@ -122,8 +194,7 @@ class Main_character(pygame.sprite.Sprite):
                 self.rect.width - 60, self.rect.height -35 # Adjust the size
             )
 
-    def update(self, scroll_x):
-        self.scroll_x = scroll_x
+    def update(self):
         self.update_animation()
         self.check_alive()
         # update cooldown
@@ -266,7 +337,7 @@ class Main_character(pygame.sprite.Sprite):
 
 
     def draw(self):
-         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect.x - self.scroll_x)
+         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         # Draw the collision rectangle for debugging
          pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)  # Red outline for collision rect
 
@@ -524,6 +595,8 @@ class Dagger(pygame.sprite.Sprite):
 
 
 
+map = TileMap("C:/Users/eveli/Desktop/game1/scripts/test3.csv")
+
 
 
 #create sprite groups
@@ -531,7 +604,6 @@ dagger_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 item_box_group = pygame.sprite.Group()
 #creating camera, peremesti potom v podhodjasee mesto
-camera_group = pygame.sprite.Group()
 
 
 
@@ -557,7 +629,9 @@ while run:
 
     clock.tick(FPS)
 
+    map.draw_map(screen)
     draw_bg()
+
 
 
     #show diamondes
@@ -574,7 +648,7 @@ while run:
     for x in range(player.ammo):
         screen.blit(dag1_box_img, (100 + (x * 7), 67))
 
-    player.update(scroll_x)
+    player.update()
     player.draw()
 
 
