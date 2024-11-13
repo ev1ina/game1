@@ -6,10 +6,10 @@ from pytmx.util_pygame import load_pygame
 pygame.init()
 
 
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 520
 
-TILE_SIZE = 16
+TILE_SIZE = 15
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Kill the fucking hero')
@@ -60,7 +60,7 @@ def draw_text(text, foont, text_col, x, y):
 
 
 def draw_bg():
-    screen.fill(BG)
+    screen.fill(BLACK)
 
 
 tmx_maps = {0: load_pygame('tiled/test2.tmx')}
@@ -68,50 +68,25 @@ tmx_maps = {0: load_pygame('tiled/test2.tmx')}
 
 
 class Level:
-    def __init__(self, tmx_map, scale_factor=2):
+    def __init__(self, tmx_map, scale_factor=2, layer_names=None):
         self.tmx_data = tmx_map
-        self.platforms = []  # List to store platform rectangles
-        self.scale_factor = scale_factor  # Define scaling factor
-
-        # Extract platform rectangles with the correct scaling
-        layer_name = "border"
-        layer = self.tmx_data.get_layer_by_name(layer_name)
-
-        if layer and hasattr(layer, 'tiles'):
-            for x, y, surf in layer.tiles():
-                # Scale tile image and position
-                screen_x = x * TILE_SIZE * self.scale_factor
-                screen_y = y * TILE_SIZE * self.scale_factor
-                width = TILE_SIZE * self.scale_factor
-                height = TILE_SIZE * self.scale_factor
-                rect = pygame.Rect(screen_x, screen_y, width, height)
-                
-                # Append each platform rect to the list
-                self.platforms.append(rect)
+        self.scale_factor = scale_factor
+        self.layer_names = layer_names  # Store layer names to be drawn
 
     def draw(self, surface):
-        # Draw the "Ground and Platforms" layer with scaling
-        layer_name = "border"
-        layer = self.tmx_data.get_layer_by_name(layer_name)
-
-        if layer and hasattr(layer, 'tiles'):
-            for x, y, surf in layer.tiles():
-                # Scale tile image consistently
-                scaled_surf = pygame.transform.scale(
-                    surf,
-                    (int(surf.get_width() * self.scale_factor),
-                     int(surf.get_height() * self.scale_factor))
-                )
-                screen_x = x * TILE_SIZE * self.scale_factor
-                screen_y = y * TILE_SIZE * self.scale_factor
-                surface.blit(scaled_surf, (screen_x, screen_y))
-
-        # Draw platform rectangles for debugging
-        for platform in self.platforms:
-            pygame.draw.rect(surface, (255, 0, 0), platform, 1)  # Red outline for platforms
-
-
-
+        # Draw each specified layer
+        for layer_name in self.layer_names:
+            layer = self.tmx_data.get_layer_by_name(layer_name)
+            if layer and hasattr(layer, 'tiles'):
+                for x, y, surf in layer.tiles():
+                    # Scale tile image and position
+                    scaled_surf = pygame.transform.scale(
+                        surf,
+                        (int(surf.get_width() * self.scale_factor), int(surf.get_height() * self.scale_factor))
+                    )
+                    screen_x = x * TILE_SIZE * self.scale_factor
+                    screen_y = y * TILE_SIZE * self.scale_factor
+                    surface.blit(scaled_surf, (screen_x, screen_y))
 
 
 
@@ -199,7 +174,7 @@ class Main_character(pygame.sprite.Sprite):
 
 
 
-    def move(self, moving_left, moving_right, platforms):
+    def move(self, moving_left, moving_right):
         #reset movement variables
         dx = 0
         dy = 0
@@ -228,8 +203,8 @@ class Main_character(pygame.sprite.Sprite):
         dy += self.vel_y #for jump
 
         # check collision with floor
-        if self.rect.bottom + dy > 200:
-            dy = 200 - self.rect.bottom
+        if self.rect.bottom + dy > 500:
+            dy = 500 - self.rect.bottom
             self.in_air = False
         else:
             self.in_air = True
@@ -337,8 +312,7 @@ class Enemy02(pygame.sprite.Sprite):
         self.move_counter = 0
         self.idling = False
         self.idle_counter = 0
-        self.vision = pygame.Rect(0, 0, 50, 20)
-        
+        self.vision = pygame.Rect(0, 0, 70, 20)        
         # Загружаем анимации
         animation_types = ['Idle', 'Run', 'Attack', 'Hit', 'Death']
         for animation in animation_types:
@@ -391,8 +365,8 @@ class Enemy02(pygame.sprite.Sprite):
         dy += self.vel_y  # Apply gravity to dy
 
         # check collision with floor
-        if self.rect.bottom + dy > 200:
-            dy = 200 - self.rect.bottom
+        if self.rect.bottom + dy > 500:
+            dy = 500 - self.rect.bottom
             self.in_air = False
         else:
             self.in_air = True
@@ -411,7 +385,7 @@ class Enemy02(pygame.sprite.Sprite):
                 self.idle_counter = 50
 
             #chek if near
-            if self.vision.colliderect(player.rect):
+            if self.vision.colliderect(player.collision_rect):
                 #attack
                 self.update_action(2)
                 self.attack_speed = self.speed * 1.2
@@ -504,6 +478,8 @@ class Enemy02(pygame.sprite.Sprite):
     def draw(self):
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)  # Red outline for collision rect
+        pygame.draw.rect(screen, RED, self.vision, 1)  # Red outline for collision rect
+
 
 
 class ItemBox(pygame.sprite.Sprite):
@@ -572,14 +548,14 @@ item_box_group = pygame.sprite.Group()
 
 
 #temp -create item boxes
-item_box = ItemBox('Health', 100, 200)
+item_box = ItemBox('Health', 100, 450)
 item_box_group.add(item_box)
-item_box = ItemBox('Ammo', 400, 200)
+item_box = ItemBox('Ammo', 400, 450)
 item_box_group.add(item_box)
-item_box = ItemBox('Diamond', 600, 200)
+item_box = ItemBox('Diamond', 600, 450)
 item_box_group.add(item_box)
 
-level = Level(tmx_maps[0], 1)
+level = Level(tmx_maps[0], scale_factor=1.5, layer_names=["background", "border"])
 
 
 player = Main_character('Gino Character', 200, 200, 1.65, 5, 20)
@@ -651,7 +627,7 @@ while run:
             player.update_action(1) # 1 on jooksemine
         else:
             player.update_action(0) #0 is idle
-        player.move(moving_left, moving_right, level.platforms)
+        player.move(moving_left, moving_right)
 
     for event in pygame.event.get():
         #quit game
