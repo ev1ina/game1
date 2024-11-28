@@ -270,6 +270,8 @@ class Main_character(pygame.sprite.Sprite):
             elif self.frame_index >= len(self.animation_list[self.action]):
                 self.frame_index = 0  # Taaskäivita animatsioon
 
+                
+
     def update_action(self, new_action):
         #check if the new aktion is different to the previous one
         if new_action != self.action:
@@ -341,6 +343,7 @@ class Enemy02(pygame.sprite.Sprite):
         self.check_alive()
 
         self.collision_rect.topleft = (self.rect.x + 10, self.rect.y + 10)
+
 
 
     def move(self, moving_left, moving_right):
@@ -448,8 +451,8 @@ class Enemy02(pygame.sprite.Sprite):
                 self.kill()  # Удаляем врага из всех групп спрайтов
             elif self.action == 3 and self.frame_index >= len(self.animation_list[3]):
                 # После завершения анимации "Hit" возвращаемся к "Idle"
-                self.is_hit = False
                 self.update_action(0)  # Возвращаемся к Idle
+                self.is_hit = False
             elif self.frame_index >= len(self.animation_list[self.action]):
                 self.frame_index = 0
 
@@ -466,9 +469,13 @@ class Enemy02(pygame.sprite.Sprite):
             self.health -= damage
             self.is_hit = True
             self.update_action(3)  # Устанавливаем состояние "Hit"
-            if self.health <= 0:
-                self.alive = False
-                self.update_action(4)  # Устанавливаем состояние "Death"
+        if self.health <= 0:
+            self.alive = False
+            self.update_action(4)  # Устанавливаем состояние "Death"
+
+        if self.health <= 0:
+            self.alive = False
+            self.update_action(4)  # Устанавливаем состояние "Death"
 
 
     def check_alive(self):
@@ -603,9 +610,11 @@ while run:
         
 
     for dagger in dagger_group:
-        if pygame.sprite.collide_rect(dagger, enemy) and enemy.alive:
-            enemy.take_damage(25)
-            dagger.kill()
+        for enemy in enemy_group:
+            if pygame.sprite.collide_rect(dagger, enemy) and enemy.alive:
+                enemy.take_damage(25)
+                dagger.kill()
+
     
     # Update and draw item boxes and daggers with camera offset
     for item in item_box_group:
