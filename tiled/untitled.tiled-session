@@ -28,19 +28,19 @@
             "scale": 2,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 268.25,
+                "x": 267.75,
                 "y": 155.75
             }
         }
     },
     "last.exportedFilePath": "C:/Users/eveli/Desktop/game1/tiled/SCV failid",
     "last.imagePath": "C:/Users/eveli/Desktop/game1/caves",
-    "map.height": 17,
+    "map.height": 34,
     "map.lastUsedExportFilter": "All Files (*)",
     "map.lastUsedFormat": "tmx",
     "map.tileHeight": 16,
     "map.tileWidth": 16,
-    "map.width": 32,
+    "map.width": 64,
     "openFiles": [
         "test.tmx",
         "main_lev_build.tsx"
