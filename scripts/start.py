@@ -32,7 +32,7 @@ SCREEN_HEIGHT = 800
 TILE_SIZE = 15
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Kill the fucking hero')
+pygame.display.set_caption('Rocky')
 
 #seadistab kaadrisagedus
 clock = pygame.time.Clock()
@@ -57,8 +57,6 @@ dag1_box_img = pygame.image.load('rocky/Collectible/Dag/1.png').convert_alpha()
 dag_box_img = pygame.transform.scale(dag1_box_img, (int(dag1_box_img.get_width() * 2), int(dag1_box_img.get_height() * 2)))
 heart_box_img = pygame.image.load('rocky/Collectible/Heart/1.png').convert_alpha()
 
-tiles = pygame.image.load('rocky/01. Rocky Level/t_ground.png').convert_alpha()
-tiles2 = pygame.transform.scale(tiles, (int(tiles.get_width() * 2), int(tiles.get_height() * 2)))
 
 
 item_boxes ={
@@ -92,79 +90,6 @@ def draw_bg():
 
 
 #level disain
-
-scroll_x = 0
-
-
-class Tile(pygame.sprite.Sprite):
-    def __init__(self, image, x, y):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = image
-        self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = x, y
-
-    def draw(self, surface):
-        surface.blit(self.image, (self.rect.x, self.rect.y))
-
-
-class TileMap:
-    def __init__(self, filename):
-        self.tmx_data = pytmx.load_pygame(filename, pixelalpha=True)
-        self.width = self.tmx_data.width * self.tmx_data.tilewidth
-        self.height = self.tmx_data.height * self.tmx_data.tileheight
-
-    def draw(self, surface):
-        for layer in self.tmx_data.visible_layers:
-            if isinstance(layer, pytmx.TiledTileLayer):
-                for x, y, gid in layer:
-                    tile = self.tmx_data.get_tile_image_by_gid(gid)
-                    if tile:
-                        surface.blit(tile, (x * self.tmx_data.tilewidth, y * self.tmx_data.tileheight))
-
-    def make_map(self):
-        surface = pygame.Surface((self.width, self.height))
-        self.draw(surface)
-        return surface
-
-    def load_map(self):
-        for tile in self.tiles:
-            tile.draw(self.map_surface)
-
-
-        
-    def read_csv(self, filename):
-        map = []
-        with open(filename) as data:
-            data = csv.reader(data,delimiter=',')
-            for row in data:
-                map.append(list(row))
-
-        return map
-    
-    def load_tiles(self, filename):
-        tiles = []
-        map = self.read_csv(filename)
-        x, y = 0, 0
-        for row in map:
-            x = 0
-            for tile in row:
-                if tile == '1493' or tile == '1494':
-                    tiles.append(Tile(tiles2, x * self.tile_size, y * self.tile_size))
-                elif tile == '968' or tile == '969':  # Add support for other tiles
-                    tiles.append(Tile(tiles2, x * self.tile_size, y * self.tile_size))
-                # Move to next tile in the current row
-                x += 1
-            # Move to the next row
-            y += 1
-   
-    
-            # Store the size of the tile map
-        self.map_w, self.map_h = x * self.tile_size, y * self.tile_size
-        return tiles
-
-
-
-
 
 
 
@@ -415,7 +340,7 @@ class Enemy02(pygame.sprite.Sprite):
         self.update_animation()
         self.check_alive()
 
-        self.collision_rect.topleft = (self.collision_rect.x + 10, self.collision_rect.y + 10)
+        self.collision_rect.topleft = (self.rect.x + 10, self.rect.y + 10)
 
 
     def move(self, moving_left, moving_right):
@@ -441,16 +366,16 @@ class Enemy02(pygame.sprite.Sprite):
         dy += self.vel_y  # Apply gravity to dy
 
         # check collision with floor
-        if self.collision_rect.bottom + dy > 500:
-            dy = 500 - self.collision_rect.bottom
+        if self.rect.bottom + dy > 500:
+            dy = 500 - self.rect.bottom
             self.in_air = False
         else:
             self.in_air = True
 
         # update rectangle position
-        self.collision_rect.x += dx
-        self.collision_rect.y += dy
-            
+        self.rect.x += dx
+        self.rect.y += dy
+
 
 
     def ai(self):
@@ -466,7 +391,7 @@ class Enemy02(pygame.sprite.Sprite):
                 self.update_action(2)
                 self.attack_speed = self.speed * 1.2
 
-        
+
 
                 if player.collision_rect.centerx - self.collision_rect.centerx > 10 or player.collision_rect.centerx - self.collision_rect.centerx < 10:
                     if player.collision_rect.centerx < self.collision_rect.centerx:
@@ -476,7 +401,7 @@ class Enemy02(pygame.sprite.Sprite):
 
                  # Reset speed after the attack
                 self.attack_speed = self.speed
-                
+
 
             if self.idling == False:
                 if self.direction == 1:
@@ -489,7 +414,7 @@ class Enemy02(pygame.sprite.Sprite):
                 self.move_counter += 1
 
                 #update vision
-                self.vision.center = (self.collision_rect.centerx + 75 * self.direction, self.collision_rect.centery)
+                self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
                 #pygame.draw.rect(screen, RED, self.vision)
 
                 if self.move_counter > TILE_SIZE*3:
@@ -553,8 +478,8 @@ class Enemy02(pygame.sprite.Sprite):
 
     def draw(self):
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
-        #pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)  # Red outline for collision rect
-        #pygame.draw.rect(screen, RED, self.vision, 1)  # Red outline for collision rect
+        pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)  # Red outline for collision rect
+        pygame.draw.rect(screen, RED, self.vision, 1)  # Red outline for collision rect
 
 
 
@@ -614,14 +539,11 @@ class Dagger(pygame.sprite.Sprite):
             self.kill()
 
     def __init__(self, width, height):
-        #self.camera_rect = pygame.Rect(0, 0, width, height)
+        self.camera_rect = pygame.Rect(0, 0, width, height)
         self.width = width
         self.height = height
 
 
-
-
-map = TileMap("C:/Users/eveli/Desktop/game1/scripts/test3.csv")
 
 
 
@@ -657,7 +579,6 @@ while run:
 
 
     draw_bg()
-    map.draw_map(screen)
 
 
 
