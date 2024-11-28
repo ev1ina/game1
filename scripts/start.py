@@ -538,12 +538,6 @@ class Dagger(pygame.sprite.Sprite):
         if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH - 100:
             self.kill()
 
-    def __init__(self, width, height):
-        self.camera_rect = pygame.Rect(0, 0, width, height)
-        self.width = width
-        self.height = height
-
-
 
 
 
