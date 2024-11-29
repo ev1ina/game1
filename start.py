@@ -514,7 +514,7 @@ class World():
     def __init__(self):
         self.obstavle_list = []
 
-    def process_date(self, data):
+    def process_data(self, data):
         # iterate through each value in level data file
         for y, row in enumerate(data):
             for x, tile in enumerate(row):
@@ -532,10 +532,9 @@ class World():
                     elif tile >= 9 and tile <= 9:#decor
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
-                    elif tile == 13: #create player
-                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20)
-                        health_bar = HeathBar(10, 10, player.health, player.health)
-
+                    #elif tile == 13:  # Создание игрока
+                        #player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20)
+                        #health_bar = HeathBar(10, 10, player.health, player.health)
                     elif tile == 14: #create enemies
                         enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2)
                         enemy_group.add(enemy)
@@ -552,9 +551,8 @@ class World():
                         exit = Cristall(img, x * TILE_SIZE, y * TILE_SIZE)
                         exit_group.add(exit)
 
-        return player, health_bar
-    
-
+        return enemy
+        
     def draw(self):
         for tile in self.obstavle_list:
             screen.blit(tile[0], tile[1])
@@ -654,8 +652,11 @@ cristall_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
 
 
-enemy = Enemy02('Enemy02', 200, 300, 1.65, 2)
-enemy_group.add(enemy)
+
+player = Main_character('Gino Character', 1 * TILE_SIZE, 1 * TILE_SIZE, 1.65, 5, 20)
+health_bar = HeathBar(10, 10, player.health, player.health)
+#enemy = Enemy02('Enemy02', 5 * TILE_SIZE, 5 * TILE_SIZE, 1.65, 2)
+#enemy_group.add(enemy)
 
 
 
@@ -663,14 +664,12 @@ enemy_group.add(enemy)
 
 #create empty tile list
 world_data = []
-for roe in range(ROWS):
+for row in range(ROWS):
     r= [-1] * COLS
     world_data.append(r)
+    
 #load in level data and create word
-fail = f'tiled/level{level}_data.csv'
-if os.path.exists(fail):
-
-    with open(fail, newline='') as csvfile:
+with open('level0_data.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         for x, row in enumerate(reader):
             for y, tile in enumerate(row):
@@ -678,7 +677,8 @@ if os.path.exists(fail):
 
 
 world = World()
-player, health_bar = world.process_date(world_data)
+enemy = world.process_data(world_data)
+
 
 
 
