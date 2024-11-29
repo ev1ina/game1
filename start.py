@@ -44,6 +44,7 @@ COLS = 150
 TILE_SIZE = SCREEN_HEIGHT // ROWS
 TILE_TYPES = 16
 level = 0
+scroll = 0
 
 #defineerib mängija tegevusmuutujad
 moving_left = False
@@ -71,6 +72,10 @@ dag_box_img = pygame.transform.scale(dag1_box_img, (int(dag1_box_img.get_width()
 heart_box_img = pygame.image.load('rocky/Collectible/Heart/1.png').convert_alpha()
 
 #cristall_img = pygame.image.load('frocky/01. Rocky Level/tiles/6.png').convert_alpha()
+back_list = []
+for x in range(1,9):
+	img = pygame.image.load(f'rocky/01. Rocky Level/{x}.png').convert_alpha()
+	back_list.append(img)
 
 
 
@@ -100,7 +105,17 @@ def draw_text(text, foont, text_col, x, y):
 
 
 def draw_bg():
-    screen.fill(BLACK)
+    screen.fill(GREEN)
+    width = back_list[0].get_width()
+    for x in range(4):
+        screen.blit(back_list[0], ((x * width) - scroll * 0.5, 0))
+        screen.blit(back_list[1], ((x * width) - scroll * 0.6, SCREEN_HEIGHT - back_list[1].get_height()+100))
+        screen.blit(back_list[2], ((x * width) - scroll * 0.7, SCREEN_HEIGHT - back_list[2].get_height()+100))
+        screen.blit(back_list[3], ((x * width) - scroll * 0.8, SCREEN_HEIGHT - back_list[3].get_height()+100))
+        screen.blit(back_list[4], ((x * width) - scroll * 0.9, SCREEN_HEIGHT - back_list[4].get_height()+100))
+        screen.blit(back_list[5], ((x * width) - scroll * 1, SCREEN_HEIGHT - back_list[5].get_height()+100))
+        screen.blit(back_list[6], ((x * width) - scroll * 1.1, SCREEN_HEIGHT - back_list[6].get_height()+100))
+        screen.blit(back_list[7], ((x * width) - scroll * 1.2, SCREEN_HEIGHT - back_list[7].get_height()+100))
 
 
 
@@ -552,6 +567,8 @@ class World():
                         exit_group.add(exit)
 
         return enemy
+    
+
         
     def draw(self):
         for tile in self.obstavle_list:
