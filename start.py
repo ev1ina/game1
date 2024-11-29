@@ -174,6 +174,10 @@ class Main_character(pygame.sprite.Sprite):
                 self.rect.x +10 , self.rect.y +30,  # Adjust the position (inset)
                 self.rect.width - 60, self.rect.height -35 # Adjust the size
             )
+        
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+
 
     def update(self):
         self.update_animation()
@@ -233,12 +237,22 @@ class Main_character(pygame.sprite.Sprite):
             self.vel_y = 10
         dy += self.vel_y #for jump
 
-        # check collision with floor
-        if self.rect.bottom + dy > 500:
-            dy = 500 - self.rect.bottom
-            self.in_air = False
-        else:
-            self.in_air = True
+        # check collision 
+        for tile in world.obstavle_list:
+            #check collision in the x direction
+            if tile [1].colliderect(self.collision_rect.x + dx, self.rect.y, self.width, self.height):
+                dx = 0
+            #check collision in the y direction
+            if tile [1].colliderect(self.collision_rect.x + dy, self.rect.y, self.width, self.height):
+                #check if below the ground, i.e jumping
+                if self.vel_y < 0:
+                    self.vel_y = 0
+                    dy =  tile[1].bottom - self.collision_rect.top
+                    #check if above the ground, ie falling
+                elif self.vel_y >= 0:
+                    self.vel_y = 0
+                    self.in_air = False
+                    dy =  tile[1].top - self.collision_rect.bottom
 
         #update rectangle position
         self.rect.x += dx
