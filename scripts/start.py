@@ -17,19 +17,18 @@
 #
 ##################################################
 
-import pygame, csv
+import pygame
 import os
 import random
-import pytmx
+import csv
 
 
 pygame.init()
 
 
-SCREEN_WIDTH = 1500
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
 
-TILE_SIZE = 15
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Rocky')
@@ -40,6 +39,11 @@ FPS = 60
 
 #määrab mängu muutujad
 GRAVITY = 0.75
+ROWS = 16
+COLS = 150
+TILE_SIZE = SCREEN_HEIGHT // ROWS
+TILE_TYPES = 16
+level = 0
 
 #defineerib mängija tegevusmuutujad
 moving_left = False
@@ -48,6 +52,15 @@ shoot = False
 
 
 #pildid 
+
+#store tiles in a list
+img_list = []
+for x in range(1,TILE_TYPES+1):
+    img = pygame.image.load(f'rocky/01. Rocky Level/tiles/{x}.png')
+    img = pygame.transform.scale(img, (TILE_SIZE, TILE_SIZE))
+    img_list.append(img)
+
+
 dagger_img = pygame.image.load('rocky/Sprites/Gino Character/PNG/dagger/1.png').convert_alpha()
 dagger_img2 = pygame.transform.scale(dagger_img, (int(dagger_img.get_width() * 2), int(dagger_img.get_height() * 2)))
 
@@ -56,6 +69,8 @@ diamond_box_img = pygame.image.load('rocky/Collectible/Diamond/1.png').convert_a
 dag1_box_img = pygame.image.load('rocky/Collectible/Dag/1.png').convert_alpha()
 dag_box_img = pygame.transform.scale(dag1_box_img, (int(dag1_box_img.get_width() * 2), int(dag1_box_img.get_height() * 2)))
 heart_box_img = pygame.image.load('rocky/Collectible/Heart/1.png').convert_alpha()
+
+#cristall_img = pygame.image.load('frocky/01. Rocky Level/tiles/6.png').convert_alpha()
 
 
 
@@ -295,6 +310,10 @@ class Main_character(pygame.sprite.Sprite):
          pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)  # Red outline for collision rect
 
 
+                  
+
+
+
 class Enemy02(pygame.sprite.Sprite):
     def __init__(self, char_type, x, y, scale, speed):
         pygame.sprite.Sprite.__init__(self)
@@ -490,6 +509,84 @@ class Enemy02(pygame.sprite.Sprite):
 
 
 
+
+class World():
+    def __init__(self):
+        self.obstavle_list = []
+
+    def process_date(self, data):
+        # iterate through each value in level data file
+        for y, row in enumerate(data):
+            for x, tile in enumerate(row):
+                if tile >= 0:
+                    img = img_list[tile]
+                    img_rect = img.get_rect()
+                    img_rect.x = x * TILE_SIZE
+                    img_rect.y = y * TILE_SIZE
+                    tile_data = (img, img_rect)
+                    if tile >= 0 and tile <=4:
+                        self.obstavle_list.append(tile_data)
+                    elif tile >=5 and tile <=8:
+                        cristall = Cristall(img, x * TILE_SIZE, y * TILE_SIZE)
+                        cristall_group.add(cristall) #cristall
+                    elif tile >= 9 and tile <= 9:#decor
+                        decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
+                        decoration_group.add(decoration)
+                    elif tile == 13: #create player
+                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20)
+                        health_bar = HeathBar(10, 10, player.health, player.health)
+
+                    elif tile == 14: #create enemies
+                        enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2)
+                        enemy_group.add(enemy)
+                    elif tile == 12: #create ammo box
+                        item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE)
+                        item_box_group.add(item_box)
+                    elif tile == 11: #create healt box
+                        item_box = ItemBox('Health', x * TILE_SIZE, y * TILE_SIZE)
+                        item_box_group.add(item_box)
+                    elif tile == 10: #create diamond box
+                        item_box = ItemBox('Diamond', x * TILE_SIZE, y * TILE_SIZE)
+                        item_box_group.add(item_box)
+                    elif tile == 15: #exit
+                        exit = Cristall(img, x * TILE_SIZE, y * TILE_SIZE)
+                        exit_group.add(exit)
+
+        return player, health_bar
+    
+
+    def draw(self):
+        for tile in self.obstavle_list:
+            screen.blit(tile[0], tile[1])
+
+
+class Cristall(pygame.sprite.Sprite):
+    def __init__(self, img, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img  # Устанавливаем изображение
+        self.rect = self.image.get_rect()  # Получаем прямоугольник для изображения
+        self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
+
+
+
+class Exit(pygame.sprite.Sprite):
+    def __init__(self, img, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img 
+        self.rect = self.image.get_rect()  
+        self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
+
+
+class Decoration(pygame.sprite.Sprite):
+    def __init__(self, img, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img  
+        self.rect = self.image.get_rect()  
+        self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
+    
+
+
+
 class ItemBox(pygame.sprite.Sprite):
     def __init__(self, item_type, x, y):
         pygame.sprite.Sprite.__init__(self)
@@ -552,24 +649,38 @@ class Dagger(pygame.sprite.Sprite):
 dagger_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 item_box_group = pygame.sprite.Group()
-#creating camera, peremesti potom v podhodjasee mesto
+decoration_group = pygame.sprite.Group()
+cristall_group = pygame.sprite.Group()
+exit_group = pygame.sprite.Group()
 
 
-
-#temp -create item boxes
-item_box = ItemBox('Health', 100, 450)
-item_box_group.add(item_box)
-item_box = ItemBox('Ammo', 400, 450)
-item_box_group.add(item_box)
-item_box = ItemBox('Diamond', 600, 450)
-item_box_group.add(item_box)
-
-
-
-player = Main_character('Gino Character', 200, 200, 1.65, 5, 20)
-health_bar = HeathBar(10, 10, player.health, player.health)
-enemy = Enemy02('Enemy02', 300, 200, 1.65, 2)
+enemy = Enemy02('Enemy02', 200, 300, 1.65, 2)
 enemy_group.add(enemy)
+
+
+
+
+
+#create empty tile list
+world_data = []
+for roe in range(ROWS):
+    r= [-1] * COLS
+    world_data.append(r)
+#load in level data and create word
+fail = f'tiled/level{level}_data.csv'
+if os.path.exists(fail):
+
+    with open(fail, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        for x, row in enumerate(reader):
+            for y, tile in enumerate(row):
+                world_data[x][y] = int(tile)
+
+
+world = World()
+player, health_bar = world.process_date(world_data)
+
+
 
 
 
@@ -578,8 +689,10 @@ while run:
 
     clock.tick(FPS)
 
-
+    #update bacground
     draw_bg()
+    #draw world map
+    world.draw()
 
 
 
@@ -628,8 +741,16 @@ while run:
     #update and draw groups
     dagger_group.update()
     item_box_group.update()
+    decoration_group.update()
+    cristall_group.update()
+    exit_group.update()
     dagger_group.draw(screen)
     item_box_group.draw(screen)
+    decoration_group.draw(screen)
+    cristall_group.draw(screen)
+    exit_group.draw(screen)
+
+
 
 
     #update player action
