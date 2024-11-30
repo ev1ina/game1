@@ -156,9 +156,9 @@ class Main_character(pygame.sprite.Sprite):
             #reset temporary list of img
             temp_list = []
             #count numbers of files in the folder
-            num_of_frames =  len(os.listdir(f'rocky/Sprites/{self.char_type}/PNG/{animation}'))
+            num_of_frames =  len(os.listdir(f'rocky/Sprites/{self.char_type}/PNG/{animation}/small'))
             for i in range(num_of_frames):
-                img = pygame.image.load(f'rocky/Sprites/{self.char_type}/PNG/{animation}/{i+1}.png').convert_alpha()
+                img = pygame.image.load(f'rocky/Sprites/{self.char_type}/PNG/{animation}/small/{i+1}.png').convert_alpha()
                 img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
                 #img_mask = pygame.mask.from_surface(img)
                 #mask_image = img_mask.to_surface()
@@ -170,10 +170,10 @@ class Main_character(pygame.sprite.Sprite):
         self.rect.center = (x,y)
 
 
-        self.collision_rect = pygame.Rect(
-                self.rect.x +10 , self.rect.y +30,  # Adjust the position (inset)
-                self.rect.width - 60, self.rect.height -35 # Adjust the size
-            )
+        #self.collision_rect = pygame.Rect(
+                #self.rect.x +10 , self.rect.y +30,  # Adjust the position (inset)
+                #self.rect.width - 60, self.rect.height -35 # Adjust the size
+            
         
         self.width = self.image.get_width()
         self.height = self.image.get_height()
@@ -182,6 +182,9 @@ class Main_character(pygame.sprite.Sprite):
     def update(self):
         self.update_animation()
         self.check_alive()
+
+        self.rect.topleft = (self.rect.x , self.rect.y)
+
         # update cooldown
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
@@ -196,13 +199,13 @@ class Main_character(pygame.sprite.Sprite):
 
         #check collision with characters потом закинь на enemies
         
-        if self.alive and enemy.alive and self.collision_rect.colliderect(enemy.collision_rect):
+        if self.alive and enemy.alive and self.rect.colliderect(enemy.rect):
             self.take_damage(10)
 
         if self.direction == 1:  # Facing right
-            self.collision_rect.topleft = (self.rect.x + 10, self.rect.y + 35)
+            self.rect.topleft = (self.rect.x, self.rect.y)
         else:  # Facing left
-            self.collision_rect.topleft = (self.rect.x + 45, self.rect.y + 35)  # Adjust the x-value for left-facing
+            self.rect.topleft = (self.rect.x , self.rect.y)  # Adjust the x-value for left-facing
 
 
 
@@ -227,7 +230,7 @@ class Main_character(pygame.sprite.Sprite):
 
         #jump
         if self.jump == True and self.in_air == False:
-            self.vel_y = -11
+            self.vel_y = -15
             self.jump = False
             self.in_air = True
 
@@ -240,19 +243,19 @@ class Main_character(pygame.sprite.Sprite):
         # check collision 
         for tile in world.obstavle_list:
             #check collision in the x direction
-            if tile [1].colliderect(self.collision_rect.x + dx, self.rect.y, self.width, self.height):
+            if tile [1].colliderect(self.rect.x + dx, self.rect.y, self.rect.width, self.rect.height):
                 dx = 0
             #check collision in the y direction
-            if tile [1].colliderect(self.collision_rect.x + dy, self.rect.y, self.width, self.height):
+            if tile [1].colliderect(self.rect.x + dy, self.rect.y, self.rect.width, self.rect.height):
                 #check if below the ground, i.e jumping
                 if self.vel_y < 0:
                     self.vel_y = 0
-                    dy =  tile[1].bottom - self.collision_rect.top
+                    dy =  tile[1].bottom - self.rect.top
                     #check if above the ground, ie falling
                 elif self.vel_y >= 0:
                     self.vel_y = 0
                     self.in_air = False
-                    dy =  tile[1].top - self.collision_rect.bottom
+                    dy =  tile[1].top - self.rect.bottom
 
         #update rectangle position
         self.rect.x += dx
@@ -266,7 +269,7 @@ class Main_character(pygame.sprite.Sprite):
         if self.shoot_cooldown == 0 and self.ammo > 0:
             self.shoot_cooldown = 20
 
-            dagger = Dagger(self.collision_rect.centerx + (0.1 * self.collision_rect.size[0] * self.direction), self.collision_rect.centery +20, self.direction)
+            dagger = Dagger(self.rect.centerx + (0.1 * self.rect.size[0] * self.direction), self.rect.centery +20, self.direction)
             dagger_group.add(dagger)
             self.ammo -= 1
 
@@ -336,7 +339,7 @@ class Main_character(pygame.sprite.Sprite):
     def draw(self):
          screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         # Draw the collision rectangle for debugging
-         pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)  # Red outline for collision rect
+         pygame.draw.rect(screen, (255, 0, 0), self.rect, 1)  # Red outline for collision rect
 
 
                   
@@ -437,17 +440,17 @@ class Enemy02(pygame.sprite.Sprite):
                 self.idle_counter = 50
 
             #chek if near
-            if self.vision.colliderect(player.collision_rect):
+            if self.vision.colliderect(player.rect):
                 #attack
                 self.update_action(2)
                 self.attack_speed = self.speed * 1.2
 
 
 
-                if player.collision_rect.centerx - self.collision_rect.centerx > 10 or player.collision_rect.centerx - self.collision_rect.centerx < 10:
-                    if player.collision_rect.centerx < self.collision_rect.centerx:
+                if player.rect.centerx - self.collision_rect.centerx > 10 or player.rect.centerx - self.collision_rect.centerx < 10:
+                    if player.rect.centerx < self.collision_rect.centerx:
                         self.move(True, False)
-                    elif player.collision_rect.centerx > self.collision_rect.centerx:
+                    elif player.rect.centerx > self.collision_rect.centerx:
                         self.move(False, True)
 
                  # Reset speed after the attack
