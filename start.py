@@ -29,6 +29,8 @@ pygame.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
 
+SCROLL_THRESH = 200
+
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Rocky')
@@ -44,13 +46,15 @@ COLS = 150
 TILE_SIZE = SCREEN_HEIGHT // ROWS
 TILE_TYPES = 16
 level = 0
-scroll = 0
+
 
 #defineerib mängija tegevusmuutujad
 moving_left = False
 moving_right = False
 shoot = False
 
+screen_scroll = 0
+bg_scroll = 0
 
 #pildid 
 
@@ -106,16 +110,16 @@ def draw_text(text, foont, text_col, x, y):
 
 def draw_bg():
     screen.fill(GREEN)
-    width = back_list[0].get_width()
+    width = back_list[1].get_width()
     for x in range(4):
-        screen.blit(back_list[0], ((x * width) - scroll * 0.5, 0))
-        screen.blit(back_list[1], ((x * width) - scroll * 0.6, SCREEN_HEIGHT - back_list[1].get_height()+100))
-        screen.blit(back_list[2], ((x * width) - scroll * 0.7, SCREEN_HEIGHT - back_list[2].get_height()+100))
-        screen.blit(back_list[3], ((x * width) - scroll * 0.8, SCREEN_HEIGHT - back_list[3].get_height()+100))
-        screen.blit(back_list[4], ((x * width) - scroll * 0.9, SCREEN_HEIGHT - back_list[4].get_height()+100))
-        screen.blit(back_list[5], ((x * width) - scroll * 1, SCREEN_HEIGHT - back_list[5].get_height()+100))
-        screen.blit(back_list[6], ((x * width) - scroll * 1.1, SCREEN_HEIGHT - back_list[6].get_height()+100))
-        screen.blit(back_list[7], ((x * width) - scroll * 1.2, SCREEN_HEIGHT - back_list[7].get_height()+100))
+        screen.blit(back_list[0], ((x * width) - bg_scroll * 0.5, 0))
+        screen.blit(back_list[1], ((x * width) - bg_scroll * 0.6, SCREEN_HEIGHT - back_list[1].get_height()+100))
+        screen.blit(back_list[2], ((x * width) - bg_scroll * 0.7, SCREEN_HEIGHT - back_list[2].get_height()+100))
+        screen.blit(back_list[3], ((x * width) - bg_scroll * 0.8, SCREEN_HEIGHT - back_list[3].get_height()+100))
+        screen.blit(back_list[4], ((x * width) - bg_scroll * 0.9, SCREEN_HEIGHT - back_list[4].get_height()+100))
+        screen.blit(back_list[5], ((x * width) - bg_scroll * 1, SCREEN_HEIGHT - back_list[5].get_height()+100))
+        screen.blit(back_list[6], ((x * width) - bg_scroll * 1.1, SCREEN_HEIGHT - back_list[6].get_height()+100))
+        screen.blit(back_list[7], ((x * width) - bg_scroll * 1.2, SCREEN_HEIGHT - back_list[7].get_height()+100))
 
 
 
@@ -183,7 +187,7 @@ class Main_character(pygame.sprite.Sprite):
         self.update_animation()
         self.check_alive()
 
-        self.rect.topleft = (self.rect.x , self.rect.y)
+        #self.rect.topleft = (self.rect.x , self.rect.y)
 
         # update cooldown
         if self.shoot_cooldown > 0:
@@ -214,6 +218,7 @@ class Main_character(pygame.sprite.Sprite):
 
     def move(self, moving_left, moving_right):
         #reset movement variables
+        screen_scroll = 0
         dx = 0
         dy = 0
 
@@ -257,9 +262,22 @@ class Main_character(pygame.sprite.Sprite):
                     self.in_air = False
                     dy =  tile[1].top - self.rect.bottom
 
+
+        if self.rect.left +dx <0 or self.rect.right +dx > SCREEN_WIDTH:
+                dx = 0
+
         #update rectangle position
         self.rect.x += dx
         self.rect.y += dy
+
+
+        #update scroll
+        if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE) - SCREEN_WIDTH)\
+            or self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx):
+            self.rect.x -= dx
+            screen_scroll =  -dx
+
+        return screen_scroll
 
 
         
@@ -384,16 +402,21 @@ class Enemy02(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
 
-        self.collision_rect = pygame.Rect(
-                self.rect.x +10 , self.rect.y +10,  # Adjust the position (inset)
-                self.rect.width - 10, self.rect.height -10 # Adjust the size
-            )
+        #self.collision_rect = pygame.Rect(
+                #self.rect.x +10 , self.rect.y +10,  # Adjust the position (inset)
+                #self.rect.width - 10, self.rect.height -10 # Adjust the size
+            #)
+
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
 
     def update(self):
         self.update_animation()
         self.check_alive()
 
-        self.collision_rect.topleft = (self.rect.x + 10, self.rect.y + 10)
+        #self.rect.topleft = (self.rect.x, self.rect.y)
+
+
 
 
 
@@ -419,17 +442,26 @@ class Enemy02(pygame.sprite.Sprite):
             self.vel_y = 10
         dy += self.vel_y  # Apply gravity to dy
 
-        # check collision with floor
-        if self.rect.bottom + dy > 500:
-            dy = 500 - self.rect.bottom
-            self.in_air = False
-        else:
-            self.in_air = True
+        # check collision 
+        for tile in world.obstavle_list:
+            #check collision in the x direction
+            if tile [1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+                dx = 0
+            #check collision in the y direction
+            if tile [1].colliderect(self.rect.x + dy, self.rect.y, self.rect.width, self.height):
+                #check if below the ground, i.e jumping
+                if self.vel_y < 0:
+                    self.vel_y = 0
+                    dy =  tile[1].bottom - self.rect.top
+                    #check if above the ground, ie falling
+                elif self.vel_y >= 0:
+                    self.vel_y = 0
+                    self.in_air = False
+                    dy =  tile[1].top - self.rect.bottom
 
-        # update rectangle position
+        #update rectangle position
         self.rect.x += dx
         self.rect.y += dy
-
 
 
     def ai(self):
@@ -447,10 +479,10 @@ class Enemy02(pygame.sprite.Sprite):
 
 
 
-                if player.rect.centerx - self.collision_rect.centerx > 10 or player.rect.centerx - self.collision_rect.centerx < 10:
-                    if player.rect.centerx < self.collision_rect.centerx:
+                if player.rect.centerx - self.rect.centerx > 10 or player.rect.centerx - self.rect.centerx < 10:
+                    if player.rect.centerx < self.rect.centerx:
                         self.move(True, False)
-                    elif player.rect.centerx > self.collision_rect.centerx:
+                    elif player.rect.centerx > self.rect.centerx:
                         self.move(False, True)
 
                  # Reset speed after the attack
@@ -479,6 +511,28 @@ class Enemy02(pygame.sprite.Sprite):
                 self.idle_counter -= 1
                 if self.idle_counter <= 0:
                     self.idling = False
+            
+            if self.direction == 1:  # Moving right
+                front_x = self.rect.right + self.speed
+            else:  # Moving left
+                front_x = self.rect.left - self.speed
+
+            front_tile_x = front_x // TILE_SIZE
+            front_tile_y = (self.rect.bottom + 1) // TILE_SIZE  # 1 pixel below the enemy
+            if 0 <= front_tile_x < COLS and 0 <= front_tile_y < ROWS:
+                ground_beneath = world_data[front_tile_y][front_tile_x] >= 0
+            else:
+                ground_beneath = False
+
+            if not ground_beneath:
+                self.direction *= -1
+                self.move_counter = 0  # Reset move counter
+                    
+
+            
+
+
+        self.rect.x += screen_scroll
 
 
 
@@ -536,7 +590,7 @@ class Enemy02(pygame.sprite.Sprite):
 
     def draw(self):
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
-        pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)  # Red outline for collision rect
+        pygame.draw.rect(screen, (255, 0, 0), self.rect, 1)  # Red outline for collision rect
         pygame.draw.rect(screen, RED, self.vision, 1)  # Red outline for collision rect
 
 
@@ -547,6 +601,7 @@ class World():
         self.obstavle_list = []
 
     def process_data(self, data):
+        self.level_length = len(data[0])
         # iterate through each value in level data file
         for y, row in enumerate(data):
             for x, tile in enumerate(row):
@@ -564,11 +619,11 @@ class World():
                     elif tile >= 9 and tile <= 9:#decor
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
-                    #elif tile == 13:  # Создание игрока
-                        #player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20)
-                        #health_bar = HeathBar(10, 10, player.health, player.health)
+                    elif tile == 13:  # Создание игрока
+                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20)
+                        health_bar = HeathBar(10, 10, player.health, player.health)
                     elif tile == 14: #create enemies
-                        enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.65, 2)
+                        enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.65, 3)
                         enemy_group.add(enemy)
                     elif tile == 12: #create ammo box
                         item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE)
@@ -579,16 +634,19 @@ class World():
                     elif tile == 10: #create diamond box
                         item_box = ItemBox('Diamond', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
-                    elif tile == 15: #exit
+                    elif tile == 15:
+                        exit = Exit(img, x * TILE_SIZE, y * TILE_SIZE)
+                        exit_group.add(exit) #exit
                         exit = Cristall(img, x * TILE_SIZE, y * TILE_SIZE)
                         exit_group.add(exit)
 
-        return enemy
+        return enemy, player, health_bar
     
 
         
     def draw(self):
         for tile in self.obstavle_list:
+            tile[1][0]  += screen_scroll
             screen.blit(tile[0], tile[1])
 
 
@@ -616,7 +674,37 @@ class Decoration(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()  
         self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
     
+class Decorations(pygame.sprite.Sprite):
+    def __init__(self, img,x,y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.rect.midtop = (x +TILE_SIZE //2, y+ (TILE_SIZE - self.image.get_height()))
 
+
+    def update(self):
+        self.rect.x += screen_scroll
+
+class Cristall(pygame.sprite.Sprite):
+    def __init__(self, img,x,y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.rect.midtop = (x +TILE_SIZE //2, y+ (TILE_SIZE - self.image.get_height()))
+
+    def update(self):
+        self.rect.x += screen_scroll
+
+
+class Exit(pygame.sprite.Sprite):
+    def __init__(self, img,x,y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.rect.midtop = (x +TILE_SIZE //2, y+ (TILE_SIZE - self.image.get_height()))
+
+    def update(self):
+        self.rect.x += screen_scroll
 
 
 class ItemBox(pygame.sprite.Sprite):
@@ -628,6 +716,8 @@ class ItemBox(pygame.sprite.Sprite):
         self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
 
     def update(self):
+        #scroll
+        self.rect.x += screen_scroll
         #check if the player has picked up the box
         if pygame.sprite.collide_rect(self, player):
             # check what kind of box it was
@@ -669,10 +759,11 @@ class Dagger(pygame.sprite.Sprite):
 
     def update(self):
         #move dagger
-        self.rect.x += (self.direction * self.speed)
+        self.rect.x += (self.direction * self.speed) + screen_scroll
         #check if dagger has gone off screen
         if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH - 100:
             self.kill()
+
 
 
 
@@ -687,8 +778,8 @@ exit_group = pygame.sprite.Group()
 
 
 
-player = Main_character('Gino Character', 1 * TILE_SIZE, 1 * TILE_SIZE, 1.65, 5, 20)
-health_bar = HeathBar(10, 10, player.health, player.health)
+#player = Main_character('Gino Character', 1 * TILE_SIZE, 1 * TILE_SIZE, 1.65, 5, 20)
+#health_bar = HeathBar(10, 10, player.health, player.health)
 #enemy = Enemy02('Enemy02', 5 * TILE_SIZE, 5 * TILE_SIZE, 1.65, 2)
 #enemy_group.add(enemy)
 
@@ -711,7 +802,7 @@ with open('level0_data.csv', newline='') as csvfile:
 
 
 world = World()
-enemy = world.process_data(world_data)
+enemy, player, health_bar = world.process_data(world_data)
 
 
 
@@ -763,27 +854,23 @@ while run:
                 dagger.kill()
 
     
-    # Update and draw item boxes and daggers with camera offset
-    for item in item_box_group:
-        item.update()
-    for dagger in dagger_group:
-        dagger.update()
+    
 
 
 
 
-    #update and draw groups
-    dagger_group.update()
     item_box_group.update()
+    dagger_group.update()
     decoration_group.update()
     cristall_group.update()
     exit_group.update()
-    dagger_group.draw(screen)
+
+    # 3. Draw objects
     item_box_group.draw(screen)
+    dagger_group.draw(screen)
     decoration_group.draw(screen)
     cristall_group.draw(screen)
     exit_group.draw(screen)
-
 
 
 
@@ -802,7 +889,11 @@ while run:
             player.update_action(1) # 1 on jooksemine
         else:
             player.update_action(0) #0 is idle
-        player.move(moving_left, moving_right)
+
+        screen_scroll = player.move(moving_left, moving_right)
+        bg_scroll -= screen_scroll
+
+
 
     for event in pygame.event.get():
         #quit game
