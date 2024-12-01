@@ -21,6 +21,7 @@ import pygame
 import os
 import random
 import csv
+import button
 
 
 pygame.init()
@@ -45,7 +46,9 @@ ROWS = 16
 COLS = 150
 TILE_SIZE = SCREEN_HEIGHT // ROWS
 TILE_TYPES = 16
+MAX_LEVELS = 1
 level = 0
+srtart_game = False
 
 
 #defineerib mängija tegevusmuutujad
@@ -81,6 +84,10 @@ for x in range(1,9):
 	img = pygame.image.load(f'rocky/01. Rocky Level/{x}.png').convert_alpha()
 	back_list.append(img)
 
+#buttons main menu
+start_img = pygame.image.load('rocky/buttons/start_btn.png').convert_alpha()
+exit_img = pygame.image.load('rocky/buttons//exit_btn.png').convert_alpha()
+restart_img = pygame.image.load('rocky/buttons//restart_btn.png').convert_alpha()
 
 
 item_boxes ={
@@ -94,9 +101,9 @@ item_boxes ={
 
 
 #värvid
-BG = (144, 201, 120)
+BG = (0, 73, 100)
 RED = (255, 0, 0)
-WHITE = (255, 255, 255)
+WHITE = (1, 40, 55) # dark blue
 GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
 
@@ -122,8 +129,24 @@ def draw_bg():
         screen.blit(back_list[7], ((x * width) - bg_scroll * 1.2, SCREEN_HEIGHT - back_list[7].get_height()+100))
 
 
+#function to reset level
+def reset_level():
+    enemy_group.empty()
+    dagger_group.empty()
+    item_box_group.empty()
+    decoration_group.empty()
+    cristall_group.empty()
+    exit_group.empty()
 
-#level disain
+    #crate empty tile list
+    data = []
+    for row in range(ROWS):
+        r= [-1] * COLS
+        data.append(r)
+
+    return data
+
+
 
 
 
@@ -203,8 +226,11 @@ class Main_character(pygame.sprite.Sprite):
 
         #check collision with characters потом закинь на enemies
         
-        if self.alive and enemy.alive and self.rect.colliderect(enemy.rect):
-            self.take_damage(10)
+        if self.alive:
+            for enemy in enemy_group:
+                if enemy.alive and self.rect.colliderect(enemy.rect):
+                    self.take_damage(10)
+                    break
 
         if self.direction == 1:  # Facing right
             self.rect.topleft = (self.rect.x, self.rect.y)
@@ -263,6 +289,22 @@ class Main_character(pygame.sprite.Sprite):
                     dy =  tile[1].top - self.rect.bottom
 
 
+        #check for collision with cristall
+        if pygame.sprite.spritecollide(self, cristall_group, False):
+            self.health = 0
+
+
+        #col with exit
+        level_complete = False
+        if pygame.sprite.spritecollide(self, exit_group, False):
+            level_complete = True
+
+        #check if fallen off the map
+        if self.rect.bottom > SCREEN_HEIGHT:
+            self.healt = 0
+
+
+
         if self.rect.left +dx <0 or self.rect.right +dx > SCREEN_WIDTH:
                 dx = 0
 
@@ -277,7 +319,7 @@ class Main_character(pygame.sprite.Sprite):
             self.rect.x -= dx
             screen_scroll =  -dx
 
-        return screen_scroll
+        return screen_scroll, level_complete
 
 
         
@@ -620,7 +662,7 @@ class World():
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
                     elif tile == 13:  # Создание игрока
-                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.65, 5, 20)
+                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.65, 7, 20)
                         health_bar = HeathBar(10, 10, player.health, player.health)
                     elif tile == 14: #create enemies
                         enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.65, 3)
@@ -765,7 +807,10 @@ class Dagger(pygame.sprite.Sprite):
             self.kill()
 
 
-
+#buttons
+start_button = button.Button(SCREEN_WIDTH // 2 - 130, SCREEN_HEIGHT// 2 -130, start_img, 1)
+exit_button = button.Button(SCREEN_WIDTH // 2 - 110, SCREEN_HEIGHT// 2 +50, exit_img, 1)
+restart_button = button.Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT// 2 -50, restart_img, 2)
 
 
 #create sprite groups
@@ -794,7 +839,7 @@ for row in range(ROWS):
     world_data.append(r)
     
 #load in level data and create word
-with open('level0_data.csv', newline='') as csvfile:
+with open(f'level{level}_data.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         for x, row in enumerate(reader):
             for y, tile in enumerate(row):
@@ -814,84 +859,126 @@ while run:
 
     clock.tick(FPS)
 
-    #update bacground
-    draw_bg()
-    #draw world map
-    world.draw()
+    if srtart_game == False:
+    #draw menu
+        screen.fill(BG)
+        #buttons
+        if start_button.draw(screen):
+            srtart_game = True
+        if exit_button.draw(screen):
+            run = False
+    else:
+        #update bacground
+        draw_bg()
+        #draw world map
+        world.draw()
 
 
 
-    #show diamondes
-    draw_text('DIAMONDES: ',font, WHITE, 10, 35)
-    for x in range(player.diamondes):
-        screen.blit(diamond_box_img, (160 + (x * 25), 37 ))
-    #show health
-    health_bar.draw(player.health)
-    #draw_text('HEALTH: ',font, WHITE, 10, 60)
-    #for x in range(player.health):
-        #screen.blit(heart_box_img, (115 + (x * 15), 62))
-    #show ammo
-    draw_text('AMMO: ',font, WHITE, 10, 65)
-    for x in range(player.ammo):
-        screen.blit(dag1_box_img, (100 + (x * 7), 67))
+        #show diamondes
+        draw_text(f'LEVEL: {level} ',font, WHITE, 10, 10)
+        draw_text('DIAMONDES: ',font, WHITE, 10, 35)
+        for x in range(player.diamondes):
+            screen.blit(diamond_box_img, (160 + (x * 25), 37 ))
+        #show health
+        health_bar.draw(player.health)
+        #draw_text('HEALTH: ',font, WHITE, 10, 60)
+        #for x in range(player.health):
+            #screen.blit(heart_box_img, (115 + (x * 15), 62))
+        #show ammo
+        draw_text('AMMO: ',font, WHITE, 10, 65)
+        for x in range(player.ammo):
+            screen.blit(dag1_box_img, (100 + (x * 7), 67))
 
-    player.update()
-    player.draw()
+        player.update()
+        player.draw()
 
-
-    
-    for enemy in enemy_group:
-        enemy.ai()
-        enemy.update()
-        enemy.draw()
 
         
-
-    for dagger in dagger_group:
         for enemy in enemy_group:
-            if pygame.sprite.collide_rect(dagger, enemy) and enemy.alive:
-                enemy.take_damage(25)
-                dagger.kill()
+            enemy.ai()
+            enemy.update()
+            enemy.draw()
 
-    
-    
+            
 
+        for dagger in dagger_group:
+            for enemy in enemy_group:
+                if pygame.sprite.collide_rect(dagger, enemy) and enemy.alive:
+                    enemy.take_damage(25)
+                    dagger.kill()
 
-
-
-    item_box_group.update()
-    dagger_group.update()
-    decoration_group.update()
-    cristall_group.update()
-    exit_group.update()
-
-    # 3. Draw objects
-    item_box_group.draw(screen)
-    dagger_group.draw(screen)
-    decoration_group.draw(screen)
-    cristall_group.draw(screen)
-    exit_group.draw(screen)
+        
+        
 
 
 
-    #update player action
-    if player.alive:
-        # shoot dagger
-        if player.is_throwing:
-            player.update_action(3)  # 3 - это "Throw attack"
-        elif shoot:
-            player.is_throwing = True
-        elif player.is_hit:
-            player.update_action(5)
-        elif player.in_air:
-            player.update_action(2)#2 is jump
-        elif moving_left or moving_right:
-            player.update_action(1) # 1 on jooksemine
-        else:
-            player.update_action(0) #0 is idle
 
-        screen_scroll = player.move(moving_left, moving_right)
-        bg_scroll -= screen_scroll
+        item_box_group.update()
+        dagger_group.update()
+        decoration_group.update()
+        cristall_group.update()
+        exit_group.update()
+
+        # 3. Draw objects
+        item_box_group.draw(screen)
+        dagger_group.draw(screen)
+        decoration_group.draw(screen)
+        cristall_group.draw(screen)
+        exit_group.draw(screen)
+
+
+
+        #update player action
+        if player.alive:
+            # shoot dagger
+            if player.is_throwing:
+                player.update_action(3)  # 3 - это "Throw attack"
+            elif shoot:
+                player.is_throwing = True
+            elif player.is_hit:
+                player.update_action(5)
+            elif player.in_air:
+                player.update_action(2)#2 is jump
+            elif moving_left or moving_right:
+                player.update_action(1) # 1 on jooksemine
+            else:
+                player.update_action(0) #0 is idle
+
+            screen_scroll, level_complete = player.move(moving_left, moving_right)
+            bg_scroll -= screen_scroll
+            #check if level is complited
+            if level_complete:
+                level += 1
+                bg_scroll = 0
+                world_data = reset_level()
+                if level <= MAX_LEVELS:
+                    with open(f'level{level}_data.csv', newline='') as csvfile:
+                        reader = csv.reader(csvfile, delimiter=',')
+                        for x, row in enumerate(reader):
+                            for y, tile in enumerate(row):
+                                world_data[x][y] = int(tile)
+
+
+                    world = World()
+                    enemy, player, health_bar = world.process_data(world_data)
+
+
+
+        else: #for restart
+            screen_scroll = 0
+            if restart_button.draw(screen):
+                bg_scroll = 0
+                world_data = reset_level()
+                with open(f'level{level}_data.csv', newline='') as csvfile:
+                        reader = csv.reader(csvfile, delimiter=',')
+                        for x, row in enumerate(reader):
+                            for y, tile in enumerate(row):
+                                world_data[x][y] = int(tile)
+
+
+                world = World()
+                enemy, player, health_bar = world.process_data(world_data)
 
 
 
