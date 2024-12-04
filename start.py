@@ -107,6 +107,8 @@ WHITE = (1, 40, 55) # dark blue
 GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
 
+background_startmenu = pygame.image.load('rocky/01. Rocky Level/backgroundgame.png').convert_alpha()
+
 #tekst ащте
 font = pygame.font.SysFont('Futura', 30)
 
@@ -658,7 +660,7 @@ class World():
                     elif tile >=5 and tile <=8:
                         cristall = Cristall(img, x * TILE_SIZE, y * TILE_SIZE)
                         cristall_group.add(cristall) #cristall
-                    elif tile >= 9 and tile <= 9:#decor
+                    elif tile == 9:#decor
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
                     elif tile == 13:  # Создание игрока
@@ -716,7 +718,7 @@ class Decoration(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()  
         self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
     
-class Decorations(pygame.sprite.Sprite):
+class Decoration(pygame.sprite.Sprite):
     def __init__(self, img,x,y):
         pygame.sprite.Sprite.__init__(self)
         self.image = img
@@ -861,8 +863,7 @@ while run:
 
     if srtart_game == False:
     #draw menu
-        screen.fill(BG)
-        #buttons
+        screen.blit(background_startmenu, background_startmenu.get_width(), background_startmenu.get_height()+100)
         if start_button.draw(screen):
             srtart_game = True
         if exit_button.draw(screen):
