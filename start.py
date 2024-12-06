@@ -531,6 +531,7 @@ class Enemy02(pygame.sprite.Sprite):
                         self.move(False, True)
                 # Reset to normal speed after the attack
                 self.attack_speed = self.speed
+                self.is_hit = False
 
 
                 if pygame.time.get_ticks() - self.update_time > 1000:  # Cooldown for attack
