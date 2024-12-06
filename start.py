@@ -279,7 +279,7 @@ class Main_character(pygame.sprite.Sprite):
             if tile [1].colliderect(self.rect.x + dx, self.rect.y, self.rect.width, self.rect.height):
                 dx = 0
             #check collision in the y direction
-            if tile [1].colliderect(self.rect.x + dy, self.rect.y, self.rect.width, self.rect.height):
+            if tile [1].colliderect(self.rect.x, self.rect.y + dy, self.rect.width, self.rect.height):
                 #check if below the ground, i.e jumping
                 if self.vel_y < 0:
                     self.vel_y = 0
@@ -303,7 +303,7 @@ class Main_character(pygame.sprite.Sprite):
 
         #check if fallen off the map
         if self.rect.bottom > SCREEN_HEIGHT:
-            self.healt = 0
+            self.health = 0
 
 
 
@@ -664,10 +664,10 @@ class World():
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
                     elif tile == 13:  # Создание игрока
-                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.65, 7, 20)
+                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.6, 7, 20)
                         health_bar = HeathBar(10, 10, player.health, player.health)
                     elif tile == 14: #create enemies
-                        enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.65, 3)
+                        enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.6, 3)
                         enemy_group.add(enemy)
                     elif tile == 12: #create ammo box
                         item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE)
@@ -681,8 +681,7 @@ class World():
                     elif tile == 15:
                         exit = Exit(img, x * TILE_SIZE, y * TILE_SIZE)
                         exit_group.add(exit) #exit
-                        exit = Cristall(img, x * TILE_SIZE, y * TILE_SIZE)
-                        exit_group.add(exit)
+                
 
         return enemy, player, health_bar
     
@@ -694,29 +693,7 @@ class World():
             screen.blit(tile[0], tile[1])
 
 
-class Cristall(pygame.sprite.Sprite):
-    def __init__(self, img, x, y):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = img  # Устанавливаем изображение
-        self.rect = self.image.get_rect()  # Получаем прямоугольник для изображения
-        self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
 
-
-
-class Exit(pygame.sprite.Sprite):
-    def __init__(self, img, x, y):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = img 
-        self.rect = self.image.get_rect()  
-        self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
-
-
-class Decoration(pygame.sprite.Sprite):
-    def __init__(self, img, x, y):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = img  
-        self.rect = self.image.get_rect()  
-        self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
     
 class Decoration(pygame.sprite.Sprite):
     def __init__(self, img,x,y):
@@ -779,7 +756,8 @@ class ItemBox(pygame.sprite.Sprite):
 class HeathBar():
     def __init__(self, x, y, health, max_health):
         self.x = x
-        self.y = self.health = health
+        self.y = y
+        self.health = health
         self.max_health = max_health
 
     def draw(self, health):
@@ -822,14 +800,6 @@ item_box_group = pygame.sprite.Group()
 decoration_group = pygame.sprite.Group()
 cristall_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
-
-
-
-#player = Main_character('Gino Character', 1 * TILE_SIZE, 1 * TILE_SIZE, 1.65, 5, 20)
-#health_bar = HeathBar(10, 10, player.health, player.health)
-#enemy = Enemy02('Enemy02', 5 * TILE_SIZE, 5 * TILE_SIZE, 1.65, 2)
-#enemy_group.add(enemy)
-
 
 
 
