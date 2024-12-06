@@ -263,7 +263,7 @@ class Main_character(pygame.sprite.Sprite):
 
         #jump
         if self.jump == True and self.in_air == False:
-            self.vel_y = -15
+            self.vel_y = -20
             self.jump = False
             self.in_air = True
 
