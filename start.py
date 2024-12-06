@@ -428,7 +428,8 @@ class Enemy02(pygame.sprite.Sprite):
         self.move_counter = 0
         self.idling = False
         self.idle_counter = 0
-        self.vision = pygame.Rect(0, 0, 70, 20)        
+        self.vision = pygame.Rect(0, 0, 70, 20)
+                
         # Загружаем анимации
         animation_types = ['Idle', 'Run', 'Attack', 'Hit', 'Death']
         for animation in animation_types:
@@ -465,11 +466,11 @@ class Enemy02(pygame.sprite.Sprite):
 
 
     def move(self, moving_left, moving_right):
-        #reset movement variables
+        # Liikumismuutujad
         dx = 0
         dy = 0
 
-        #assign movement variable if moving left or right
+        # Kui liigub vasakule või paremale
         if moving_left:
             dx = -self.speed
             self.flip = True
@@ -480,138 +481,102 @@ class Enemy02(pygame.sprite.Sprite):
             self.flip = False
             self.direction = 1
 
-         # apply gravity
+        # Gravitatsioon
         self.vel_y += GRAVITY
         if self.vel_y > 10:
             self.vel_y = 10
-        dy += self.vel_y  # Apply gravity to dy
+        dy += self.vel_y
 
-        # check collision 
+        # Kontrollime kokkupõrkeid tahvlitega
         for tile in world.obstavle_list:
-            #check collision in the x direction
-            if tile [1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+            # X-suunaline kokkupõrge
+            if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.rect.width, self.rect.height):
                 dx = 0
-            #check collision in the y direction
-            if tile [1].colliderect(self.rect.x + dy, self.rect.y, self.rect.width, self.height):
-                #check if below the ground, i.e jumping
-                if self.vel_y < 0:
+            # Y-suunaline kokkupõrge
+            if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.rect.width, self.rect.height):
+                if self.vel_y < 0:  # Kui hüppab
                     self.vel_y = 0
-                    dy =  tile[1].bottom - self.rect.top
-                    #check if above the ground, ie falling
-                elif self.vel_y >= 0:
+                    dy = tile[1].bottom - self.rect.top
+                elif self.vel_y >= 0:  # Kui kukub
                     self.vel_y = 0
                     self.in_air = False
-                    dy =  tile[1].top - self.rect.bottom
+                    dy = tile[1].top - self.rect.bottom
 
-        #update rectangle position
+        
+    
+        # Uuenda vaenlase positsiooni
         self.rect.x += dx
         self.rect.y += dy
+        
+
+
 
 
     def ai(self):
         if self.alive and player.alive:
-            if self.idling == False and random.randint(1, 200) == 1:
-                self.update_action(0) #idle
+            if not self.idling and random.randint(1, 200) == 1:
+                self.update_action(0)  # Idle
                 self.idling = True
                 self.idle_counter = 50
 
-            #chek if near
+            self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
             if self.vision.colliderect(player.rect):
-                #attack
-                self.update_action(2)
-                self.attack_speed = self.speed * 1.2
+                self.update_action(2)  # Attack
 
-
-
-                if player.rect.centerx - self.rect.centerx > 10 or player.rect.centerx - self.rect.centerx < 10:
+                # Move faster toward the player within the allowed area
+                if abs(player.rect.centerx - self.rect.centerx) > 10:
                     if player.rect.centerx < self.rect.centerx:
                         self.move(True, False)
                     elif player.rect.centerx > self.rect.centerx:
                         self.move(False, True)
-
-                 # Reset speed after the attack
+                # Reset to normal speed after the attack
                 self.attack_speed = self.speed
 
 
-            if self.idling == False:
+                if pygame.time.get_ticks() - self.update_time > 1000:  # Cooldown for attack
+                    self.update_action(0)  # Return to Idle
+
+        
+
+            if not self.idling:
                 if self.direction == 1:
                     ai_moving_right = True
                 else:
                     ai_moving_right = False
                 ai_moving_left = not ai_moving_right
                 self.move(ai_moving_left, ai_moving_right)
-                #self.update_action(1)
                 self.move_counter += 1
 
-                #update vision
-                self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
-                #pygame.draw.rect(screen, RED, self.vision)
-
-                if self.move_counter > TILE_SIZE*3:
+                if self.move_counter > TILE_SIZE * 2:
                     self.direction *= -1
                     self.move_counter *= -1
-
             else:
                 self.idle_counter -= 1
                 if self.idle_counter <= 0:
                     self.idling = False
-            
-            if self.direction == 1:  # Moving right
-                front_x = self.rect.right + self.speed
-            else:  # Moving left
-                front_x = self.rect.left - self.speed
 
-            front_tile_x = front_x // TILE_SIZE
-            front_tile_y = (self.rect.bottom + 1) // TILE_SIZE  # 1 pixel below the enemy
-            if 0 <= front_tile_x < COLS and 0 <= front_tile_y < ROWS:
-                ground_beneath = world_data[front_tile_y][front_tile_x] >= 0
-            else:
-                ground_beneath = False
-
-            if not ground_beneath:
-                self.direction *= -1
-                self.move_counter = 0  # Reset move counter
-                    
-
-            
-
-
-        self.rect.x += screen_scroll
-
-
-
+            self.rect.x += screen_scroll
 
 
     def update_animation(self):
         ANIMATION_COOLDOWN = 100
-        # Проверяем, что текущая анимация не пустая
         if len(self.animation_list[self.action]) > 0:
-            # Проверяем, что текущий индекс в допустимом диапазоне
-            if self.frame_index < len(self.animation_list[self.action]):
-                self.image = self.animation_list[self.action][self.frame_index]
-
-        # Обновляем кадры с задержкой
+            self.image = self.animation_list[self.action][self.frame_index]
         if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
             self.update_time = pygame.time.get_ticks()
             self.frame_index += 1
 
-            # Если враг умирает и анимация достигла последнего кадра
-            if self.action == 4 and self.frame_index >= len(self.animation_list[4]):
-                self.kill()  # Удаляем врага из всех групп спрайтов
-            elif self.action == 3 and self.frame_index >= len(self.animation_list[3]):
-                # После завершения анимации "Hit" возвращаемся к "Idle"
-                self.update_action(0)  # Возвращаемся к Idle
+            if self.action == 3 and self.frame_index >= len(self.animation_list[3]) - 1:
                 self.is_hit = False
+                if self.health > 0:
+                    self.update_action(0)  # Return to Idle after Hit
+                else:
+                    self.update_action(4)  # Trigger Death animation
+
+            elif self.action == 4 and self.frame_index >= len(self.animation_list[4]) - 1:
+                self.kill()
             elif self.frame_index >= len(self.animation_list[self.action]):
                 self.frame_index = 0
-
-
-
-    def update_action(self, new_action):
-        if new_action != self.action:
-            self.action = new_action
-            self.frame_index = 0
-            self.update_time = pygame.time.get_ticks()
 
     def take_damage(self, damage):
         if self.alive and not self.is_hit:
@@ -625,6 +590,15 @@ class Enemy02(pygame.sprite.Sprite):
         if self.health <= 0:
             self.alive = False
             self.update_action(4)  # Устанавливаем состояние "Death"
+
+
+    def update_action(self, new_action):
+        if new_action != self.action:
+            self.action = new_action
+            self.frame_index = 0
+            self.update_time = pygame.time.get_ticks()
+    
+
 
 
     def check_alive(self):
