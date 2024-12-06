@@ -851,6 +851,7 @@ with open(f'level{level}_data.csv', newline='') as csvfile:
 world = World()
 enemy, player, health_bar = world.process_data(world_data)
 
+scaled_background = pygame.transform.scale(background_startmenu, (800, 640))
 
 
 
@@ -863,7 +864,9 @@ while run:
 
     if srtart_game == False:
     #draw menu
-        screen.blit(background_startmenu, background_startmenu.get_width(), background_startmenu.get_height()+100)
+        #screen.fill(BG)
+        screen.blit(scaled_background, (0, 0))
+        #buttons
         if start_button.draw(screen):
             srtart_game = True
         if exit_button.draw(screen):
