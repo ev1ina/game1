@@ -45,7 +45,7 @@ GRAVITY = 0.75
 ROWS = 16
 COLS = 150
 TILE_SIZE = SCREEN_HEIGHT // ROWS
-TILE_TYPES = 16
+TILE_TYPES = 17
 MAX_LEVELS = 1
 level = 0
 srtart_game = False
@@ -70,7 +70,7 @@ for x in range(1,TILE_TYPES+1):
 
 
 dagger_img = pygame.image.load('rocky/Sprites/Gino Character/PNG/dagger/1.png').convert_alpha()
-dagger_img2 = pygame.transform.scale(dagger_img, (int(dagger_img.get_width() * 2), int(dagger_img.get_height() * 2)))
+dagger_img2 = pygame.transform.scale(dagger_img, (int(dagger_img.get_width() * 1.5), int(dagger_img.get_height() * 1.5)))
 
 #pick up boxes
 diamond_box_img = pygame.image.load('rocky/Collectible/Diamond/1.png').convert_alpha()
@@ -263,7 +263,7 @@ class Main_character(pygame.sprite.Sprite):
 
         #jump
         if self.jump == True and self.in_air == False:
-            self.vel_y = -20
+            self.vel_y = -16
             self.jump = False
             self.in_air = True
 
@@ -298,7 +298,7 @@ class Main_character(pygame.sprite.Sprite):
 
         #col with exit
         level_complete = False
-        if pygame.sprite.spritecollide(self, exit_group, False):
+        if pygame.sprite.spritecollide(self, exit_group, False) and player.diamondes ==3:
             level_complete = True
 
         #check if fallen off the map
@@ -331,12 +331,10 @@ class Main_character(pygame.sprite.Sprite):
         if self.shoot_cooldown == 0 and self.ammo > 0:
             self.shoot_cooldown = 20
 
-            dagger = Dagger(self.rect.centerx + (0.1 * self.rect.size[0] * self.direction), self.rect.centery +20, self.direction)
+            dagger = Dagger(self.rect.centerx + (0.1 *self.rect.size[0] * self.direction), self.rect.centery, self.direction)
             dagger_group.add(dagger)
             self.ammo -= 1
 
-    def get_diamondes(self):
-        pass
 
     def take_damage(self, damage):
         current_time = pygame.time.get_ticks()
@@ -653,7 +651,7 @@ class World():
                     elif tile == 10: #create diamond box
                         item_box = ItemBox('Diamond', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
-                    elif tile == 15:
+                    elif tile >=15 and tile <=16:
                         exit = Exit(img, x * TILE_SIZE, y * TILE_SIZE)
                         exit_group.add(exit) #exit
                 
@@ -724,7 +722,7 @@ class ItemBox(pygame.sprite.Sprite):
             elif self.item_type == 'Ammo':
                 player.ammo += 15
             elif self.item_type == 'Diamond':
-                player.diamondes += 3
+                player.diamondes += 1
             #delete the item box
             self.kill()
 
