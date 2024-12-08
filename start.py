@@ -3,15 +3,16 @@
 # 2024/2025 sügissemester
 #
 # Projekt
-# Teema: 2d mäng
+# Teema: 2d mäng (platformer)
 #
 # Autorid: Evelina Kortel, Marta Laine
 #
 # mõningane eeskuju: Super Mario
 #
 # Lisakommentaar (nt käivitusjuhend):
-# See on esimene mängu projekt , mistõttu võib koodis esineda mõningaid vigu. 
+# See on esimene mängu projekt, mistõttu võib koodis esineda mõningaid vigu. 
 # Mängu käivitamiseks soovitame kasutada debugi režiimi, et tuvastada ja parandada võimalikud probleemid.
+# Projekt ja instructioon võib leida githabis https://github.com/ev1ina/game1/tree/main
 #
 #
 ##################################################
@@ -631,7 +632,7 @@ class World():
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
                     elif tile == 14:  # Loome mängija
-                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.6, 7, 20)
+                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.6, 7, 10)
                         health_bar = HeathBar(10, 10, player.health, player.health)
                     elif tile == 15: # Loome vaenlase
                         enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.6, 3)
@@ -720,7 +721,7 @@ class ItemBox(pygame.sprite.Sprite):
             if player.health > player.max_health:
                 player.health = player.max_health
             elif self.item_type == 'Ammo':
-                player.ammo += 15
+                player.ammo += 5
             elif self.item_type == 'Diamond':
                 player.diamondes += 1
             # Eemaldame kasti mängust
