@@ -240,7 +240,16 @@ class Main_character(pygame.sprite.Sprite):
             self.rect.topleft = (self.rect.x , self.rect.y)  # Adjust the x-value for left-facing
 
 
-
+    def take_damage(self, damage):
+        current_time = pygame.time.get_ticks()
+        # Kontrollime, kas piisavalt aega on möödunud, et kahju võtta
+        if current_time - self.last_damage_time > self.damage_cooldown:
+            self.health -= damage
+            self.last_damage_time = current_time  # Uuendame viimast kahju aega
+            self.is_hit = True  # Märgime, et tegelane võtab kahju
+            # Kui tervis on suurem kui 0, alustame "Hit" animatsiooni
+            if self.is_hit:
+                self.update_action(5)  # 5 - "Hit" animatsioon
 
 
 
@@ -293,7 +302,7 @@ class Main_character(pygame.sprite.Sprite):
 
         #check for collision with cristall
         if pygame.sprite.spritecollide(self, cristall_group, False):
-            self.health = 0
+            self.take_damage(10)
 
 
         #col with exit
@@ -336,16 +345,6 @@ class Main_character(pygame.sprite.Sprite):
             self.ammo -= 1
 
 
-    def take_damage(self, damage):
-        current_time = pygame.time.get_ticks()
-        # Kontrollime, kas piisavalt aega on möödunud, et kahju võtta
-        if current_time - self.last_damage_time > self.damage_cooldown:
-            self.health -= damage
-            self.last_damage_time = current_time  # Uuendame viimast kahju aega
-            self.is_hit = True  # Märgime, et tegelane võtab kahju
-            # Kui tervis on suurem kui 0, alustame "Hit" animatsiooni
-            if self.is_hit:
-                self.update_action(5)  # 5 - "Hit" animatsioon
 
 
 
@@ -642,10 +641,10 @@ class World():
                     elif tile == 14: #create enemies
                         enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.6, 3)
                         enemy_group.add(enemy)
-                    elif tile == 12: #create ammo box
+                    elif tile == 11: #create ammo box
                         item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
-                    elif tile == 11: #create healt box
+                    elif tile == 12: #create healt box
                         item_box = ItemBox('Health', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
                     elif tile == 10: #create diamond box
