@@ -45,7 +45,7 @@ GRAVITY = 0.75
 ROWS = 16
 COLS = 150
 TILE_SIZE = SCREEN_HEIGHT // ROWS
-TILE_TYPES = 17
+TILE_TYPES = 18
 MAX_LEVELS = 1
 level = 0
 srtart_game = False
@@ -307,7 +307,7 @@ class Main_character(pygame.sprite.Sprite):
 
         #col with exit
         level_complete = False
-        if pygame.sprite.spritecollide(self, exit_group, False) and player.diamondes ==3:
+        if pygame.sprite.spritecollide(self, exit_group, False) and player.diamondes >= 3:
             level_complete = True
 
         #check if fallen off the map
@@ -627,30 +627,30 @@ class World():
                     img_rect.x = x * TILE_SIZE
                     img_rect.y = y * TILE_SIZE
                     tile_data = (img, img_rect)
-                    if tile >= 0 and tile <=4:
+                    if tile >= 0 and tile <=5:
                         self.obstavle_list.append(tile_data)
-                    elif tile >=5 and tile <=8:
+                    elif tile >=6 and tile <=9:
                         cristall = Cristall(img, x * TILE_SIZE, y * TILE_SIZE)
                         cristall_group.add(cristall) #cristall
-                    elif tile == 9:#decor
+                    elif tile == 10:#decor
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
-                    elif tile == 13:  # Создание игрока
+                    elif tile == 14:  # Создание игрока
                         player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.6, 7, 20)
                         health_bar = HeathBar(10, 10, player.health, player.health)
-                    elif tile == 14: #create enemies
+                    elif tile == 15: #create enemies
                         enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.6, 3)
                         enemy_group.add(enemy)
-                    elif tile == 11: #create ammo box
+                    elif tile == 12: #create ammo box
                         item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
-                    elif tile == 12: #create healt box
+                    elif tile == 13: #create healt box
                         item_box = ItemBox('Health', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
-                    elif tile == 10: #create diamond box
+                    elif tile == 11: #create diamond box
                         item_box = ItemBox('Diamond', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
-                    elif tile >=15 and tile <=16:
+                    elif tile >=16 and tile <=17:
                         exit = Exit(img, x * TILE_SIZE, y * TILE_SIZE)
                         exit_group.add(exit) #exit
                 
@@ -899,7 +899,7 @@ while run:
                 bg_scroll = 0
                 world_data = reset_level()
                 if level <= MAX_LEVELS:
-                    with open(f'level{level}_data.csv', newline='') as csvfile:
+                    with open(f'levelid/level{level}_data.csv', newline='') as csvfile:
                         reader = csv.reader(csvfile, delimiter=',')
                         for x, row in enumerate(reader):
                             for y, tile in enumerate(row):
