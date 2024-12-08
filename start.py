@@ -45,8 +45,8 @@ GRAVITY = 0.75
 ROWS = 16
 COLS = 150
 TILE_SIZE = SCREEN_HEIGHT // ROWS
-TILE_TYPES = 18
-MAX_LEVELS = 1
+TILE_TYPES = 19
+MAX_LEVELS = 3
 level = 0
 srtart_game = False
 
@@ -67,6 +67,7 @@ for x in range(1,TILE_TYPES+1):
     img = pygame.image.load(f'rocky/01. Rocky Level/tiles/{x}.png')
     img = pygame.transform.scale(img, (TILE_SIZE, TILE_SIZE))
     img_list.append(img)
+
 
 
 dagger_img = pygame.image.load('rocky/Sprites/Gino Character/PNG/dagger/1.png').convert_alpha()
@@ -627,7 +628,7 @@ class World():
                     img_rect.x = x * TILE_SIZE
                     img_rect.y = y * TILE_SIZE
                     tile_data = (img, img_rect)
-                    if tile >= 0 and tile <=5:
+                    if tile >= 0 and tile <=5 or tile == 18:
                         self.obstavle_list.append(tile_data)
                     elif tile >=6 and tile <=9:
                         cristall = Cristall(img, x * TILE_SIZE, y * TILE_SIZE)
@@ -728,7 +729,7 @@ class ItemBox(pygame.sprite.Sprite):
 class HeathBar():
     def __init__(self, x, y, health, max_health):
         self.x = x
-        self.y = y
+        self.y = y+80
         self.health = health
         self.max_health = max_health
 
@@ -916,7 +917,7 @@ while run:
             if restart_button.draw(screen):
                 bg_scroll = 0
                 world_data = reset_level()
-                with open(f'level{level}_data.csv', newline='') as csvfile:
+                with open(f'levelid/level{level}_data.csv', newline='') as csvfile:
                         reader = csv.reader(csvfile, delimiter=',')
                         for x, row in enumerate(reader):
                             for y, tile in enumerate(row):
