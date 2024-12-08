@@ -209,25 +209,25 @@ class Main_character(pygame.sprite.Sprite):
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
 
-         # Выполняем бросок в середине анимации "Throw attack"
-        if self.action == 3:
+        # Sooritame viske "Throw attack" animatsiooni keskel
+        if self.action == 3: # Kontrollime, kas tegevus on "Throw attack"
             if self.frame_index == len(self.animation_list[3]) // 2 and self.shoot_cooldown == 0 and self.ammo > 0:
-                self.shoot()
+                self.shoot() # Käivitame viske
             elif self.frame_index == len(self.animation_list[3]) - 1:
                 self.is_throwing = False
-                self.update_action(0)  # Возвращаемся к idle
+                self.update_action(0)  # Naaseme Idle olekusse
 
-        #check collision with characters потом закинь на enemies
-        
+       # Kontrollime kokkupõrkeid vaenlastega
         if self.alive:
             for enemy in enemy_group:
-                if enemy.alive and self.rect.colliderect(enemy.rect):
+                if enemy.alive and self.rect.colliderect(enemy.rect): # Kokkupõrge vaenlasega
                     self.take_damage(10)
                     break
 
-        if self.direction == 1:  # Facing right
+        # Määrame mängija positsiooni vastavalt suunale
+        if self.direction == 1:  # Paremale
             self.rect.topleft = (self.rect.x, self.rect.y)
-        else:  # Facing left
+        else:  # Vasakule
             self.rect.topleft = (self.rect.x , self.rect.y)  # Adjust the x-value for left-facing
 
 
@@ -245,12 +245,12 @@ class Main_character(pygame.sprite.Sprite):
 
 
     def move(self, moving_left, moving_right):
-        #reset movement variables
+        # Lähtestame liikumise muutujad
         screen_scroll = 0
         dx = 0
         dy = 0
 
-        #assign movement variable if moving left or right
+        # Kontrollime, kas mängija liigub vasakule või paremale
         if moving_left:
             dx = -self.speed
             self.flip = True
@@ -261,61 +261,61 @@ class Main_character(pygame.sprite.Sprite):
             self.flip = False
             self.direction = 1
 
-        #jump
+        # Kontrollime hüpet
         if self.jump == True and self.in_air == False:
-            self.vel_y = -16
+            self.vel_y = -16 # Hüppe kiirus
             self.jump = False
             self.in_air = True
 
-        #apply gravity
+        # Rakendame gravitatsiooni
         self.vel_y += GRAVITY
-        if self.vel_y > 10:
+        if self.vel_y > 10: # Piirame maksimaalse langemiskiiruse
             self.vel_y = 10
-        dy += self.vel_y #for jump
+        dy += self.vel_y 
 
-        # check collision 
+        # Kontrollime kokkupõrkeid takistustega
         for tile in world.obstavle_list:
-            #check collision in the x direction
+            # Kontrollime horisontaalset kokkupõrget
             if tile [1].colliderect(self.rect.x + dx, self.rect.y, self.rect.width, self.rect.height):
                 dx = 0
-            #check collision in the y direction
+            # Kontrollime vertikaalset kokkupõrget
             if tile [1].colliderect(self.rect.x, self.rect.y + dy, self.rect.width, self.rect.height):
-                #check if below the ground, i.e jumping
+                #kas on põrand, i.e hüppame
                 if self.vel_y < 0:
                     self.vel_y = 0
                     dy =  tile[1].bottom - self.rect.top
-                    #check if above the ground, ie falling
+                    # Kui mängija langeb
                 elif self.vel_y >= 0:
                     self.vel_y = 0
                     self.in_air = False
                     dy =  tile[1].top - self.rect.bottom
 
 
-        #check for collision with cristall
+         # Kontrollime kokkupõrget kristallidega
         if pygame.sprite.spritecollide(self, cristall_group, False):
             self.take_damage(10)
 
 
-        #col with exit
+       # Kontrollime taseme lõppu
         level_complete = False
         if pygame.sprite.spritecollide(self, exit_group, False) and player.diamondes >= 3:
             level_complete = True
 
-        #check if fallen off the map
+        # Kas mängija kukkus kaardilt välja
         if self.rect.bottom > SCREEN_HEIGHT:
             self.health = 0
 
 
-
+        # Takistame mängijal ekraanilt välja liikuda
         if self.rect.left +dx <0 or self.rect.right +dx > SCREEN_WIDTH:
                 dx = 0
 
-        #update rectangle position
+        # Uuendame mängija positsiooni
         self.rect.x += dx
         self.rect.y += dy
 
 
-        #update scroll
+         # Uuendame kaamera liikumist
         if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE) - SCREEN_WIDTH)\
             or self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx):
             self.rect.x -= dx
@@ -328,11 +328,11 @@ class Main_character(pygame.sprite.Sprite):
 
 
     def shoot(self):
+        # Kontrollime, kas lask on võimalik
         if self.shoot_cooldown == 0 and self.ammo > 0:
-            self.shoot_cooldown = 20
-
+            self.shoot_cooldown = 15 # Laskude vaheline aeg
             dagger = Dagger(self.rect.centerx + (0.1 *self.rect.size[0] * self.direction), self.rect.centery, self.direction)
-            dagger_group.add(dagger)
+            dagger_group.add(dagger) # Lisame noa gruppi
             self.ammo -= 1
 
 
@@ -342,11 +342,13 @@ class Main_character(pygame.sprite.Sprite):
         
 
     def update_animation(self):
-        ANIMATION_COOLDOWN = 100  # animatsiooni kiirus
+        ANIMATION_COOLDOWN = 100  # Animatsiooni kiirus
 
+        # Kontrollime, et kaadri indeks ei läheks üle animatsioonide arvu
         if self.frame_index >= len(self.animation_list[self.action]):
             self.frame_index = len(self.animation_list[self.action]) - 1
 
+        # Määrame praeguse animatsiooni kaadri
         self.image = self.animation_list[self.action][self.frame_index]
 
         # Kontrollime, kas piisavalt aega on möödunud
@@ -354,14 +356,14 @@ class Main_character(pygame.sprite.Sprite):
             self.update_time = pygame.time.get_ticks()
             self.frame_index += 1
 
-            # Kui "Hit" animatsioon on lõppenud, läheme tagasi "Idle" animatsioonile
+           # Kui "Hit" animatsioon on lõppenud, naaseme "Idle" animatsioonile
             if self.action == 5 and self.frame_index >= len(self.animation_list[5]):
                 self.update_action(0)  # 0 - "Idle" animatsioon
-                self.is_hit = False  # Lõpetame kahju võtmise oleku
+                self.is_hit = False   # Lõpetame kahju oleku
 
-            # Kui tegevus on "Death" ja oleme jõudnud viimase kaadrini, peatame animatsiooni
+            # Kui "Death" animatsioon on lõppenud, peatame animatsiooni viimasele kaadrile
             elif self.action == 4 and self.frame_index >= len(self.animation_list[4]) - 1:
-                self.frame_index = len(self.animation_list[4]) - 1  # Peatume viimase kaadri juures
+                self.frame_index = len(self.animation_list[4]) - 1  # Peatame viimasele kaadrile
 
             # Ülejäänud tegevused, nagu Run või Idle, jätkuvad loopitult
             elif self.frame_index >= len(self.animation_list[self.action]):
@@ -370,23 +372,25 @@ class Main_character(pygame.sprite.Sprite):
                 
 
     def update_action(self, new_action):
-        #check if the new aktion is different to the previous one
+         # Kontrollime, kas uus tegevus erineb praegusest
         if new_action != self.action:
             self.action = new_action
-            # update the animation settings
+            # Uendame animatsiooni seadistused
             self.frame_index = 0
             self.update_time = pygame.time.get_ticks()
 
     def check_alive(self):
+        # Kontrollime, kas mängija tervis on otsas
         if self.health <= 0:
             self.health = 0
             self.speed = 0
             self.alive = False
-            self.update_action(4)
+            self.update_action(4)  # Käivitame "Death" animatsiooni
 
 
 
     def draw(self):
+          # Joonistame mängija ekraanile ja pöörame vastavalt suunale
          screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         # Draw the collision rectangle for debugging
         # pygame.draw.rect(screen, (255, 0, 0), self.rect, 1)  # Red outline for collision rect
@@ -397,6 +401,7 @@ class Main_character(pygame.sprite.Sprite):
 
 
 class Enemy02(pygame.sprite.Sprite):
+    """Vaenlase klass, mis kirjeldab liikumist, animatsioone ja AI käitumist."""
     def __init__(self, char_type, x, y, scale, speed):
         pygame.sprite.Sprite.__init__(self)
         self.char_type = char_type
@@ -407,7 +412,7 @@ class Enemy02(pygame.sprite.Sprite):
         self.attack_speed = speed
         self.alive = True
         self.health = 100
-        self.is_hit = False  # Флаг удара
+        self.is_hit = False  # Kontrollib, kas vaenlane on tabamuse saanud
         self.action = 0  # 0 - Idle, 1 - Run, 2 - Attack, 3 - Hit, 4 - Death
         self.frame_index = 0
         self.flip = False
@@ -416,9 +421,9 @@ class Enemy02(pygame.sprite.Sprite):
         self.move_counter = 0
         self.idling = False
         self.idle_counter = 0
-        self.vision = pygame.Rect(0, 0, 70, 20)
+        self.vision = pygame.Rect(0, 0, 70, 20) # Nägemise ala (ristkülik)
                 
-        # Загружаем анимации
+        # Laadime kõik vaenlase animatsioonid
         animation_types = ['Idle', 'Run', 'Attack', 'Hit', 'Death']
         for animation in animation_types:
             temp_list = []
@@ -431,30 +436,21 @@ class Enemy02(pygame.sprite.Sprite):
                     temp_list.append(img)
             self.animation_list.append(temp_list)
 
+        # Määrame algse pildi ja positsiooni
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
-
-        #self.collision_rect = pygame.Rect(
-                #self.rect.x +10 , self.rect.y +10,  # Adjust the position (inset)
-                #self.rect.width - 10, self.rect.height -10 # Adjust the size
-            #)
-
         self.width = self.image.get_width()
         self.height = self.image.get_height()
 
     def update(self):
+        """Uuendab animatsioone ja kontrollib, kas vaenlane on elus."""
         self.update_animation()
         self.check_alive()
 
-        #self.rect.topleft = (self.rect.x, self.rect.y)
-
-
-
-
 
     def move(self, moving_left, moving_right):
-        # Liikumismuutujad
+        """Kontrollib vaenlase liikumist."""
         dx = 0
         dy = 0
 
@@ -469,13 +465,13 @@ class Enemy02(pygame.sprite.Sprite):
             self.flip = False
             self.direction = 1
 
-        # Gravitatsioon
+        # Rakendame gravitatsiooni
         self.vel_y += GRAVITY
         if self.vel_y > 10:
             self.vel_y = 10
         dy += self.vel_y
 
-        # Kontrollime kokkupõrkeid tahvlitega
+        # Kontrollime kokkupõrkeid objektidega
         for tile in world.obstavle_list:
             # X-suunaline kokkupõrge
             if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.rect.width, self.rect.height):
@@ -501,6 +497,7 @@ class Enemy02(pygame.sprite.Sprite):
 
 
     def ai(self):
+        """Vaenlase tehisintellekti (AI) loogika."""
         if self.alive and player.alive:
             if not self.idling and random.randint(1, 200) == 1:
                 self.update_action(0)  # Idle
@@ -511,23 +508,23 @@ class Enemy02(pygame.sprite.Sprite):
             if self.vision.colliderect(player.rect):
                 self.update_action(2)  # Attack
 
-                # Move faster toward the player within the allowed area
+                # liigub kiirem kui mängijat näeb
                 if abs(player.rect.centerx - self.rect.centerx) > 10:
                     if player.rect.centerx < self.rect.centerx:
                         self.move(True, False)
                     elif player.rect.centerx > self.rect.centerx:
                         self.move(False, True)
-                # Reset to normal speed after the attack
+                # tagasi tava kiirusele
                 self.attack_speed = self.speed
                 self.is_hit = False
 
 
                 if pygame.time.get_ticks() - self.update_time > 1000:  # Cooldown for attack
-                    self.update_action(0)  # Return to Idle
+                    self.update_action(0)  # Tagasi Idle
 
         
 
-            if not self.idling:
+            if not self.idling: # Kui vaenlane liigub
                 if self.direction == 1:
                     ai_moving_right = True
                 else:
@@ -536,7 +533,7 @@ class Enemy02(pygame.sprite.Sprite):
                 self.move(ai_moving_left, ai_moving_right)
                 self.move_counter += 1
 
-                if self.move_counter > TILE_SIZE * 2:
+                if self.move_counter > TILE_SIZE * 2: # Muuda suunda
                     self.direction *= -1
                     self.move_counter *= -1
             else:
@@ -548,6 +545,7 @@ class Enemy02(pygame.sprite.Sprite):
 
 
     def update_animation(self):
+        """Uuendab vaenlase animatsioone vastavalt tegevusele."""
         ANIMATION_COOLDOWN = 100
         if len(self.animation_list[self.action]) > 0:
             self.image = self.animation_list[self.action][self.frame_index]
@@ -558,27 +556,24 @@ class Enemy02(pygame.sprite.Sprite):
             if self.action == 3 and self.frame_index >= len(self.animation_list[3]) - 1:
                 self.is_hit = False
                 if self.health > 0:
-                    self.update_action(0)  # Return to Idle after Hit
+                    self.update_action(0)  # tagasi Idle pärast Hit
                 else:
-                    self.update_action(4)  # Trigger Death animation
+                    self.update_action(4)   # Käivita surma animatsioon
 
             elif self.action == 4 and self.frame_index >= len(self.animation_list[4]) - 1:
-                self.kill()
+                self.kill() # Eemalda sprite mängust
             elif self.frame_index >= len(self.animation_list[self.action]):
-                self.frame_index = 0
+                self.frame_index = 0 # Taaskäivita animatsioon
 
     def take_damage(self, damage):
+        """Rakendab vaenlasele kahju ja uuendab olekut."""
         if self.alive and not self.is_hit:
             self.health -= damage
             self.is_hit = True
-            self.update_action(3)  # Устанавливаем состояние "Hit"
+            self.update_action(3)  # "Hit" animatsioon
         if self.health <= 0:
             self.alive = False
-            self.update_action(4)  # Устанавливаем состояние "Death"
-
-        if self.health <= 0:
-            self.alive = False
-            self.update_action(4)  # Устанавливаем состояние "Death"
+            self.update_action(4)  # "Death"
 
 
     def update_action(self, new_action):
@@ -588,62 +583,71 @@ class Enemy02(pygame.sprite.Sprite):
             self.update_time = pygame.time.get_ticks()
     
 
-
-
     def check_alive(self):
+        """Kontrollib, kas vaenlane on elus."""
         if self.health <= 0 and self.alive:
             self.alive = False
-            self.update_action(4)  # Устанавливаем "Death" только один раз
+            self.update_action(4)  # "Death" 
 
     def draw(self):
+        """Joonistab vaenlase ekraanile."""
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
-        pygame.draw.rect(screen, (255, 0, 0), self.rect, 1)  # Red outline for collision rect
-        pygame.draw.rect(screen, RED, self.vision, 1)  # Red outline for collision rect
+        #pygame.draw.rect(screen, (255, 0, 0), self.rect, 1)  # vaenlase rectangle
+        #pygame.draw.rect(screen, RED, self.vision, 1)  # Nägemisala
 
 
 
 
 class World():
+    """Mängumaailma klass, mis haldab taseme andmeid ja elemente."""
     def __init__(self):
+        """Initsialiseerib maailma takistuste loendi."""
         self.obstavle_list = []
 
     def process_data(self, data):
+        """
+        Töötleb taseme andmeid ja loob vastavad elemendid.
+        :param data: Kahemõõtmeline massiiv taseme andmetega.
+        :return: Vaenlane, mängija ja terviseindikaator.
+        """
         self.level_length = len(data[0])
-        # iterate through each value in level data file
+
+        # Läbib läbi kõik andmed ja määrab objektid
         for y, row in enumerate(data):
             for x, tile in enumerate(row):
-                if tile >= 0:
+                if tile >= 0: # Kontrollime, kas plaat on kehtiv
                     img = img_list[tile]
                     img_rect = img.get_rect()
                     img_rect.x = x * TILE_SIZE
                     img_rect.y = y * TILE_SIZE
                     tile_data = (img, img_rect)
+                     # Lisame takistuse
                     if tile >= 0 and tile <=5 or tile == 18:
                         self.obstavle_list.append(tile_data)
                     elif tile >=6 and tile <=9:
                         cristall = Cristall(img, x * TILE_SIZE, y * TILE_SIZE)
-                        cristall_group.add(cristall) #cristall
-                    elif tile == 10:#decor
+                        cristall_group.add(cristall) #kristallid
+                    elif tile == 10:# Dekoratsioonid
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
-                    elif tile == 14:  # Создание игрока
+                    elif tile == 14:  # Loome mängija
                         player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.6, 7, 20)
                         health_bar = HeathBar(10, 10, player.health, player.health)
-                    elif tile == 15: #create enemies
+                    elif tile == 15: # Loome vaenlase
                         enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.6, 3)
                         enemy_group.add(enemy)
-                    elif tile == 12: #create ammo box
+                    elif tile == 12: # Lisame laskemoonakasti
                         item_box = ItemBox('Ammo', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
-                    elif tile == 13: #create healt box
+                    elif tile == 13: #tervisekasti
                         item_box = ItemBox('Health', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
-                    elif tile == 11: #create diamond box
+                    elif tile == 11: # teemantikasti
                         item_box = ItemBox('Diamond', x * TILE_SIZE, y * TILE_SIZE)
                         item_box_group.add(item_box)
                     elif tile >=16 and tile <=17:
                         exit = Exit(img, x * TILE_SIZE, y * TILE_SIZE)
-                        exit_group.add(exit) #exit
+                        exit_group.add(exit) # Väljapääsu
                 
 
         return enemy, player, health_bar
@@ -651,6 +655,7 @@ class World():
 
         
     def draw(self):
+        """Joonistab kõik takistused ekraanile."""
         for tile in self.obstavle_list:
             tile[1][0]  += screen_scroll
             screen.blit(tile[0], tile[1])
@@ -659,6 +664,7 @@ class World():
 
     
 class Decoration(pygame.sprite.Sprite):
+    """Klass dekoratsiooni loomiseks."""
     def __init__(self, img,x,y):
         pygame.sprite.Sprite.__init__(self)
         self.image = img
@@ -667,9 +673,11 @@ class Decoration(pygame.sprite.Sprite):
 
 
     def update(self):
+        """Uuendab dekoratsiooni positsiooni ekraanil."""
         self.rect.x += screen_scroll
 
 class Cristall(pygame.sprite.Sprite):
+    """Klass kristalli loomiseks."""
     def __init__(self, img,x,y):
         pygame.sprite.Sprite.__init__(self)
         self.image = img
@@ -681,6 +689,7 @@ class Cristall(pygame.sprite.Sprite):
 
 
 class Exit(pygame.sprite.Sprite):
+    """Klass väljapääsu loomiseks."""
     def __init__(self, img,x,y):
         pygame.sprite.Sprite.__init__(self)
         self.image = img
@@ -692,6 +701,7 @@ class Exit(pygame.sprite.Sprite):
 
 
 class ItemBox(pygame.sprite.Sprite):
+    """Klass erinevate esemekastide loomiseks."""
     def __init__(self, item_type, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.item_type = item_type
@@ -700,11 +710,11 @@ class ItemBox(pygame.sprite.Sprite):
         self.rect.midtop = (x + TILE_SIZE // 2, y + (TILE_SIZE - self.image.get_height()))
 
     def update(self):
+        """Uuendab esemekasti positsiooni ja kontrollib, kas mängija on selle kasti võtnud."""
         #scroll
         self.rect.x += screen_scroll
-        #check if the player has picked up the box
+        # Kontrollime, kas mängija korjas kasti üles
         if pygame.sprite.collide_rect(self, player):
-            # check what kind of box it was
             if self.item_type == 'Health':
                 player.health += 25
             if player.health > player.max_health:
@@ -713,10 +723,12 @@ class ItemBox(pygame.sprite.Sprite):
                 player.ammo += 15
             elif self.item_type == 'Diamond':
                 player.diamondes += 1
-            #delete the item box
+            # Eemaldame kasti mängust
             self.kill()
 
 class HeathBar():
+    """Terviseindikaatori klass, mis näitab mängija praegust ja maksimaalset tervist."""
+
     def __init__(self, x, y, health, max_health):
         self.x = x
         self.y = y+80
@@ -724,39 +736,48 @@ class HeathBar():
         self.max_health = max_health
 
     def draw(self, health):
-        #update wirh new health
+        """
+        Joonistab terviseindikaatori ekraanile.
+        :param health: Mängija praegune tervis.
+        """
         self.health = health
-        #calculate health ratio
+        # Arvutab tervise suhte
         ratio = self.health / self.max_health
-        pygame.draw.rect(screen, BLACK, (self.x - 2, self.y - 2, 154, 24))
-        pygame.draw.rect(screen, RED, (self.x, self.y, 150, 20))
-        pygame.draw.rect(screen, GREEN, (self.x, self.y, 150 * ratio, 20))
+        pygame.draw.rect(screen, BLACK, (self.x - 2, self.y - 2, 154, 24)) # Raam
+        pygame.draw.rect(screen, RED, (self.x, self.y, 150, 20)) # Taust
+        pygame.draw.rect(screen, GREEN, (self.x, self.y, 150 * ratio, 20)) # Täidetud osa
 
          
 class Dagger(pygame.sprite.Sprite):
+    """Nuga, mida mängija saab visata."""
     def __init__(self, x, y, direction):
+        """
+        Initsialiseerib noole omadused.
+        :param x: Algne X-koordinaat.
+        :param y: Algne Y-koordinaat.
+        :param direction: Suund, kuhu nool liigub (1 - paremale, -1 - vasakule).
+        """
         pygame.sprite.Sprite.__init__(self)
-        self.speed = 10
+        self.speed = 10 # Liikumise kiirus
         self.image = dagger_img2
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.direction = direction
 
     def update(self):
-        #move dagger
-        self.rect.x += (self.direction * self.speed) + screen_scroll
-        #check if dagger has gone off screen
-        if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH - 100:
+        """Uuendab noole positsiooni ja eemaldab selle, kui see läheb ekraanilt välja."""
+        self.rect.x += (self.direction * self.speed) + screen_scroll # Liigutab noolt
+        if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH - 100: # Kontrollib, kas nool on ekraanilt väljas
             self.kill()
 
 
-#buttons
+# Nuppude loomine
 start_button = button.Button(SCREEN_WIDTH // 2 - 130, SCREEN_HEIGHT// 2 -130, start_img, 1)
 exit_button = button.Button(SCREEN_WIDTH // 2 - 110, SCREEN_HEIGHT// 2 +50, exit_img, 1)
 restart_button = button.Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT// 2 -50, restart_img, 2)
 
 
-#create sprite groups
+# Sprite-gruppide loomine
 dagger_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 item_box_group = pygame.sprite.Group()
@@ -767,13 +788,13 @@ exit_group = pygame.sprite.Group()
 
 
 
-#create empty tile list
+# Taseme andmete ettevalmistamine
 world_data = []
 for row in range(ROWS):
     r= [-1] * COLS
     world_data.append(r)
     
-#load in level data and create word
+# Taseme andmete laadimine
 with open(f'levelid/level{level}_data.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         for x, row in enumerate(reader):
@@ -781,62 +802,65 @@ with open(f'levelid/level{level}_data.csv', newline='') as csvfile:
                 world_data[x][y] = int(tile)
 
 
+# Mängumaailma ja objektide loomine
 world = World()
 enemy, player, health_bar = world.process_data(world_data)
 
 
 
 
-
+# Mängu põhitsükkel
 run = True
 while run:
 
-    clock.tick(FPS)
+    clock.tick(FPS) # Juhib kaadrite kiirust
 
     if srtart_game == False:
-    #draw menu
+        # Menüükraan
         #screen.fill(BG)
         screen.blit(scaled_background, (0, 0))
-        #buttons
+        # Nuppud
         if start_button.draw(screen):
             srtart_game = True
         if exit_button.draw(screen):
             run = False
     else:
-        #update bacground
+        # Taust ja maailm
         draw_bg()
-        #draw world map
         world.draw()
 
 
 
-        #show diamondes
+        # Näitab mis level
         draw_text(f'LEVEL: {level} ',font, WHITE, 10, 10)
+
+        # Näitab teemantide arvu
         draw_text('DIAMONDES: ',font, WHITE, 10, 35)
         for x in range(player.diamondes):
             screen.blit(diamond_box_img, (160 + (x * 25), 37 ))
-        #show health
+       
+        # Näitab tervist
         health_bar.draw(player.health)
         #draw_text('HEALTH: ',font, WHITE, 10, 60)
         #for x in range(player.health):
             #screen.blit(heart_box_img, (115 + (x * 15), 62))
-        #show ammo
+        
+        # Näitab laskemoona
         draw_text('AMMO: ',font, WHITE, 10, 65)
         for x in range(player.ammo):
             screen.blit(dag1_box_img, (100 + (x * 7), 67))
 
+        # Uuendused ja joonistused
         player.update()
         player.draw()
 
 
-        
         for enemy in enemy_group:
             enemy.ai()
             enemy.update()
             enemy.draw()
 
             
-
         for dagger in dagger_group:
             for enemy in enemy_group:
                 if pygame.sprite.collide_rect(dagger, enemy) and enemy.alive:
@@ -845,17 +869,14 @@ while run:
 
         
         
-
-
-
-
+         # Sprite-gruppide uuendamine ja joonistamine
         item_box_group.update()
         dagger_group.update()
         decoration_group.update()
         cristall_group.update()
         exit_group.update()
 
-        # 3. Draw objects
+    
         item_box_group.draw(screen)
         dagger_group.draw(screen)
         decoration_group.draw(screen)
@@ -864,25 +885,24 @@ while run:
 
 
 
-        #update player action
+        ## Mängija tegevuste uuendamine
         if player.alive:
-            # shoot dagger
             if player.is_throwing:
-                player.update_action(3)  # 3 - это "Throw attack"
+                player.update_action(3)  # 3 - "Throw attack"
             elif shoot:
                 player.is_throwing = True
             elif player.is_hit:
                 player.update_action(5)
             elif player.in_air:
-                player.update_action(2)#2 is jump
+                player.update_action(2)# 2 - hüppemine
             elif moving_left or moving_right:
                 player.update_action(1) # 1 on jooksemine
             else:
-                player.update_action(0) #0 is idle
+                player.update_action(0) #0 - idle
 
             screen_scroll, level_complete = player.move(moving_left, moving_right)
             bg_scroll -= screen_scroll
-            #check if level is complited
+            # Kontrollib, kas tase on lõpetatud
             if level_complete:
                 level += 1
                 bg_scroll = 0
@@ -900,7 +920,7 @@ while run:
 
 
 
-        else: #for restart
+        else: #Taaskäivitamise jaoks
             screen_scroll = 0
             if restart_button.draw(screen):
                 bg_scroll = 0
@@ -918,10 +938,10 @@ while run:
 
 
     for event in pygame.event.get():
-        #quit game
+        # Väljumine mängust
         if event.type == pygame.QUIT:
             run = False
-        # keybord presses
+        # Klahvivajutused
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
                 moving_left = True
@@ -934,7 +954,7 @@ while run:
             if event.key == pygame.K_ESCAPE:
                 run = False
 
-        # keyboawrd button released
+        # Klahvide vabastamine
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_a:
                 moving_left = False
