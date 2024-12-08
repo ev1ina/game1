@@ -5,13 +5,12 @@
 # Projekt
 # Teema: 2d mäng
 #
-#
 # Autorid: Evelina Kortel, Marta Laine
 #
 # mõningane eeskuju: Super Mario
 #
-# Lisakommentaar (nt käivitusjuhend): kui see on algversioon mõned vead koodis on, käivitada on vaja debugiga
-# See on projekti algversioon, mistõttu võib koodis esineda mõningaid vigu. 
+# Lisakommentaar (nt käivitusjuhend):
+# See on esimene mängu projekt , mistõttu võib koodis esineda mõningaid vigu. 
 # Mängu käivitamiseks soovitame kasutada debugi režiimi, et tuvastada ja parandada võimalikud probleemid.
 #
 #
@@ -23,45 +22,46 @@ import random
 import csv
 import button
 
-
+# Algseadistused
 pygame.init()
 
-
+# Määrab ekraani suuruse
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
 
+# Skrollimise piir
 SCROLL_THRESH = 200
 
-
+# Loo ekraan ja lisa pealkiri
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Rocky')
 
-#seadistab kaadrisagedus
+# Seadistab kaadrisageduse
 clock = pygame.time.Clock()
 FPS = 60
 
-#määrab mängu muutujad
-GRAVITY = 0.75
-ROWS = 16
-COLS = 150
-TILE_SIZE = SCREEN_HEIGHT // ROWS
-TILE_TYPES = 19
-MAX_LEVELS = 3
-level = 0
-srtart_game = False
+# Mängu muutujad
+GRAVITY = 0.75 # Gravitatsiooni konstant
+ROWS = 16 # Maailma ridade arv
+COLS = 150  # Maailma veergude arv
+TILE_SIZE = SCREEN_HEIGHT // ROWS  # Plaadi suurus
+TILE_TYPES = 19 # Plaadi tüüpide arv
+MAX_LEVELS = 3 # Maksimaalne tasemete arv
+level = 0 # Alustatakse esimeselt tasemelt
+srtart_game = False # Kontrollib, kas mäng on alanud
 
 
-#defineerib mängija tegevusmuutujad
+# Mängija liikumise muutujad
 moving_left = False
 moving_right = False
 shoot = False
 
+# Ekraani ja tausta skrollimise muutujad
 screen_scroll = 0
 bg_scroll = 0
 
-#pildid 
-
-#store tiles in a list
+# Plaatide pildid
+# Loob tühi nimekiri, kuhu lisatakse plaatide pildid
 img_list = []
 for x in range(1,TILE_TYPES+1):
     img = pygame.image.load(f'rocky/01. Rocky Level/tiles/{x}.png')
@@ -69,28 +69,29 @@ for x in range(1,TILE_TYPES+1):
     img_list.append(img)
 
 
-
+# Nõel (dagger) pilt
+# Laadib ja skaleerib nõela pildi
 dagger_img = pygame.image.load('rocky/Sprites/Gino Character/PNG/dagger/1.png').convert_alpha()
 dagger_img2 = pygame.transform.scale(dagger_img, (int(dagger_img.get_width() * 1.5), int(dagger_img.get_height() * 1.5)))
 
-#pick up boxes
+# Esemed (kasti pildid)
 diamond_box_img = pygame.image.load('rocky/Collectible/Diamond/1.png').convert_alpha()
 dag1_box_img = pygame.image.load('rocky/Collectible/Dag/1.png').convert_alpha()
 dag_box_img = pygame.transform.scale(dag1_box_img, (int(dag1_box_img.get_width() * 2), int(dag1_box_img.get_height() * 2)))
 heart_box_img = pygame.image.load('rocky/Collectible/Heart/1.png').convert_alpha()
 
-#cristall_img = pygame.image.load('frocky/01. Rocky Level/tiles/6.png').convert_alpha()
+# Tausta pildid
 back_list = []
 for x in range(1,9):
 	img = pygame.image.load(f'rocky/01. Rocky Level/{x}.png').convert_alpha()
 	back_list.append(img)
 
-#buttons main menu
+# Menüünupud
 start_img = pygame.image.load('rocky/buttons/start_btn.png').convert_alpha()
 exit_img = pygame.image.load('rocky/buttons//exit_btn.png').convert_alpha()
 restart_img = pygame.image.load('rocky/buttons//restart_btn.png').convert_alpha()
 
-
+# Objektide pildid (nimekirja vormingus
 item_boxes ={
     "Health"    : heart_box_img,
     "Ammo"      : dag_box_img,
@@ -101,39 +102,38 @@ item_boxes ={
 
 
 
-#värvid
-BG = (0, 73, 100)
-RED = (255, 0, 0)
-WHITE = (1, 40, 55) # dark blue
-GREEN = (0, 255, 0)
+# Värvid
+BG = (0, 73, 100) # Taustavärv
+RED = (255, 0, 0) 
+WHITE = (1, 40, 55) # Tume sinine
+GREEN = (0, 255, 0) 
 BLACK = (0, 0, 0)
 
+# Taustapildi seadistamine
 background_startmenu = pygame.image.load('rocky/01. Rocky Level/backgroundgame.png').convert_alpha()
+scaled_background = pygame.transform.scale(background_startmenu, (800, 640))
 
-#tekst ащте
+# Teksti stiil
 font = pygame.font.SysFont('Futura', 30)
 
-def draw_text(text, foont, text_col, x, y):
+# Funktsioon teksti joonistamiseks
+def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
 
-
+# Funktsioon tausta joonistamiseks
 def draw_bg():
+    """Joonistab liikuva tausta."""
     screen.fill(GREEN)
     width = back_list[1].get_width()
     for x in range(4):
         screen.blit(back_list[0], ((x * width) - bg_scroll * 0.5, 0))
-        screen.blit(back_list[1], ((x * width) - bg_scroll * 0.6, SCREEN_HEIGHT - back_list[1].get_height()+100))
-        screen.blit(back_list[2], ((x * width) - bg_scroll * 0.7, SCREEN_HEIGHT - back_list[2].get_height()+100))
-        screen.blit(back_list[3], ((x * width) - bg_scroll * 0.8, SCREEN_HEIGHT - back_list[3].get_height()+100))
-        screen.blit(back_list[4], ((x * width) - bg_scroll * 0.9, SCREEN_HEIGHT - back_list[4].get_height()+100))
-        screen.blit(back_list[5], ((x * width) - bg_scroll * 1, SCREEN_HEIGHT - back_list[5].get_height()+100))
-        screen.blit(back_list[6], ((x * width) - bg_scroll * 1.1, SCREEN_HEIGHT - back_list[6].get_height()+100))
-        screen.blit(back_list[7], ((x * width) - bg_scroll * 1.2, SCREEN_HEIGHT - back_list[7].get_height()+100))
+        for i in range(1, len(back_list)):
+            screen.blit(back_list[i], ((x * width) - bg_scroll * (0.5 + i * 0.1), SCREEN_HEIGHT - back_list[i].get_height() + 100))
 
-
-#function to reset level
+# Funktsioon taseme taastamiseks
 def reset_level():
+    """Lähtestab mängumaailma taseme."""
     enemy_group.empty()
     dagger_group.empty()
     item_box_group.empty()
@@ -141,51 +141,48 @@ def reset_level():
     cristall_group.empty()
     exit_group.empty()
 
-    #crate empty tile list
+    """ Puhas tile list"""
     data = []
-    for row in range(ROWS):
+    for r in range(ROWS):
         r= [-1] * COLS
         data.append(r)
 
     return data
 
 
-
-
-
-
+# Mängija klass (peategelane)
 class Main_character(pygame.sprite.Sprite):
+    """Mängija klass, mis hõlmab kõiki peategelase omadusi ja tegevusi."""
     def __init__(self, char_type, x, y, scale, speed, ammo):
         pygame.sprite.Sprite.__init__(self)
-        self.alive = True
-        self.char_type = char_type
-        self.speed = speed
-        self.ammo = ammo
-        self.diamondes = 0
-        self.start_ammo = ammo
-        self.shoot_cooldown = 0
-        self.health = 100
-        self.max_health =self.health
-        self.direction = 1
-        self.vel_y = 0
-        self.jump = False
-        self.is_throwing = False
-        self.in_air = True
-        self.flip = False
-        self.is_hit = False
-        self.animation_list = []
-        self.frame_index = 0
-        self.action = 0
-        self.update_time = pygame.time.get_ticks()
-        self.damage_cooldown = 1000  # 1 sekund (1000 ms) vahe kokkupõrke kahju vahel
-        self.last_damage_time = pygame.time.get_ticks()  # algne viide ajale
+        # Mängija omadused
+        self.alive = True # Kontrollib, kas mängija on elus
+        self.char_type = char_type # Tegelase tüüp
+        self.speed = speed # Liikumise kiirus
+        self.ammo = ammo # Algne laskemoon
+        self.diamondes = 0 # Kogutud teemantide arv
+        self.start_ammo = ammo # Algne laskemoon varuks
+        self.shoot_cooldown = 0 # Aeg, mis peab mööduma enne järgmist lasku
+        self.health = 100 # Mängija algne tervisepunktide arv
+        self.max_health =self.health # Mängija maksimaalne tervis
+        self.direction = 1 # Suund (1 - paremale, -1 - vasakule)
+        self.vel_y = 0 # Vertikaalne kiirus (hüpped ja kukkumine)
+        self.jump = False # Kas mängija hüppab
+        self.is_throwing = False # Kas mängija sooritab rünnaku
+        self.in_air = True # Kas mängija on õhus
+        self.flip = False # Pööramine vasakule/paremale
+        self.is_hit = False # Kas mängija saab kahju
+        self.animation_list = [] # Animatsioonide loend
+        self.frame_index = 0 # Praeguse animatsiooni kaadri indeks
+        self.action = 0 # Praegune tegevus (nt 0 - Idle, 1 - Run jne)
+        self.update_time = pygame.time.get_ticks() # Aeg animatsiooni uuendamiseks
+        self.damage_cooldown = 1000  # Kahjustuste ajavahemik (ms)
+        self.last_damage_time = pygame.time.get_ticks()  # Viimase kahju saamise aeg
 
-        #load all images for the player
+        # Laadime mängija animatsioonid
         animation_types = ['Idle','Run','Jump', 'Throw attack', 'Death', 'Hit']
         for animation in animation_types:
-            #reset temporary list of img
             temp_list = []
-            #count numbers of files in the folder
             num_of_frames =  len(os.listdir(f'rocky/Sprites/{self.char_type}/PNG/{animation}/small'))
             for i in range(num_of_frames):
                 img = pygame.image.load(f'rocky/Sprites/{self.char_type}/PNG/{animation}/small/{i+1}.png').convert_alpha()
@@ -195,27 +192,20 @@ class Main_character(pygame.sprite.Sprite):
                 temp_list.append(img)
             self.animation_list.append(temp_list)
         
+        # Määrame mängija algse pildi ja positsiooni
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
-        self.rect.center = (x,y)
-
-
-        #self.collision_rect = pygame.Rect(
-                #self.rect.x +10 , self.rect.y +30,  # Adjust the position (inset)
-                #self.rect.width - 60, self.rect.height -35 # Adjust the size
-            
-        
+        self.rect.center = (x,y) 
         self.width = self.image.get_width()
         self.height = self.image.get_height()
 
 
     def update(self):
+        """Uuendame animatsiooni ja kontrollime, kas mängija on elus"""
         self.update_animation()
         self.check_alive()
 
-        #self.rect.topleft = (self.rect.x , self.rect.y)
-
-        # update cooldown
+         # Uuendame laske cooldown'i
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
 
@@ -399,7 +389,7 @@ class Main_character(pygame.sprite.Sprite):
     def draw(self):
          screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         # Draw the collision rectangle for debugging
-         pygame.draw.rect(screen, (255, 0, 0), self.rect, 1)  # Red outline for collision rect
+        # pygame.draw.rect(screen, (255, 0, 0), self.rect, 1)  # Red outline for collision rect
 
 
                   
@@ -793,8 +783,6 @@ with open(f'levelid/level{level}_data.csv', newline='') as csvfile:
 
 world = World()
 enemy, player, health_bar = world.process_data(world_data)
-
-scaled_background = pygame.transform.scale(background_startmenu, (800, 640))
 
 
 
