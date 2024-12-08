@@ -783,7 +783,7 @@ for row in range(ROWS):
     world_data.append(r)
     
 #load in level data and create word
-with open(f'level{level}_data.csv', newline='') as csvfile:
+with open(f'levelid/level{level}_data.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         for x, row in enumerate(reader):
             for y, tile in enumerate(row):
