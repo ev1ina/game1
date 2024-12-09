@@ -632,7 +632,7 @@ class World():
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
                     elif tile == 14:  # Loome mängija
-                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.6, 7, 10)
+                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.6, 15, 10)
                         health_bar = HeathBar(10, 10, player.health, player.health)
                     elif tile == 15: # Loome vaenlase
                         enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.6, 3)
