@@ -47,10 +47,10 @@ ROWS = 16 # Maailma ridade arv
 COLS = 150  # Maailma veergude arv
 TILE_SIZE = SCREEN_HEIGHT // ROWS  # Plaadi suurus
 TILE_TYPES = 19 # Plaadi tüüpide arv
-MAX_LEVELS = 3 # Maksimaalne tasemete arv
+MAX_LEVELS = 0 # Maksimaalne tasemete arv
 level = 0 # Alustatakse esimeselt tasemelt
 srtart_game = False # Kontrollib, kas mäng on alanud
-
+game_completed = False
 
 # Mängija liikumise muutujad
 moving_left = False
@@ -91,6 +91,8 @@ for x in range(1,9):
 start_img = pygame.image.load('rocky/buttons/start_btn.png').convert_alpha()
 exit_img = pygame.image.load('rocky/buttons//exit_btn.png').convert_alpha()
 restart_img = pygame.image.load('rocky/buttons//restart_btn.png').convert_alpha()
+end_img = pygame.image.load('rocky/buttons/theend.png').convert_alpha()
+scaled_end_img = pygame.transform.scale(end_img, (200, 64))
 
 # Objektide pildid (nimekirja vormingus
 item_boxes ={
@@ -632,7 +634,7 @@ class World():
                         decoration = Decoration(img, x * TILE_SIZE, y * TILE_SIZE)
                         decoration_group.add(decoration)
                     elif tile == 14:  # Loome mängija
-                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.6, 15, 10)
+                        player = Main_character('Gino Character', x * TILE_SIZE, y * TILE_SIZE, 1.6, 7, 10)
                         health_bar = HeathBar(10, 10, player.health, player.health)
                     elif tile == 15: # Loome vaenlase
                         enemy = Enemy02('Enemy02', x * TILE_SIZE, y * TILE_SIZE, 1.6, 3)
@@ -809,7 +811,6 @@ enemy, player, health_bar = world.process_data(world_data)
 
 
 
-
 # Mängu põhitsükkel
 run = True
 while run:
@@ -825,6 +826,32 @@ while run:
             srtart_game = True
         if exit_button.draw(screen):
             run = False
+
+    elif game_completed:
+    # Kuvab lõpp-stseeni
+        screen.blit(scaled_background, (0, 0))
+        screen.blit(scaled_end_img, (SCREEN_WIDTH // 2 - scaled_end_img.get_width() // 2 +15, SCREEN_HEIGHT // 2 - scaled_end_img.get_height() // 2-150))  # Pildi kuvamine ekraani keskel
+
+        screen_scroll = 0
+        if restart_button.draw(screen):
+            # Taaskäivita mäng algusest
+            bg_scroll = 0
+            level = 0  # Alusta esimesest tasemest
+            game_completed = False  # Tühista mängu lõpetamise olek
+            srtart_game = False  # Naase menüüsse
+            world_data = reset_level()
+            
+            # Laadi esimese taseme andmed
+            with open(f'levelid/level{level}_data.csv', newline='') as csvfile:
+                reader = csv.reader(csvfile, delimiter=',')
+                for x, row in enumerate(reader):
+                    for y, tile in enumerate(row):
+                        world_data[x][y] = int(tile)
+
+            # Taasloo maailm ja mängija
+            world = World()
+            enemy, player, health_bar = world.process_data(world_data)
+
     else:
         # Taust ja maailm
         draw_bg()
@@ -907,14 +934,17 @@ while run:
             if level_complete:
                 level += 1
                 bg_scroll = 0
-                world_data = reset_level()
-                if level <= MAX_LEVELS:
+                if level > MAX_LEVELS:
+                    # Kui tase on viimane, siis tähista mäng lõpetatuks
+                    game_completed = True
+                else:
+                    # Laadi järgmine tase
+                    world_data = reset_level()
                     with open(f'levelid/level{level}_data.csv', newline='') as csvfile:
                         reader = csv.reader(csvfile, delimiter=',')
                         for x, row in enumerate(reader):
                             for y, tile in enumerate(row):
                                 world_data[x][y] = int(tile)
-
 
                     world = World()
                     enemy, player, health_bar = world.process_data(world_data)
