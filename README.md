@@ -61,7 +61,3 @@ Projekti kallal töötamine võttis kokku umbes 50 tundi või rohkem, arvestades
 
 [Asset from Icho.io](https://szadiart.itch.io/rocky-world-platformer-set)
 
-
-- **Tehisintellekt** Aitas parandada meie vigu, selgitas, mida me valesti tegime, ning tuletas meelde, et oleme tulevased programmeerijad, kes peavad oma töö ise ära tegema. Samas pakkus AI meile ka lisatööd, et meid arendada...
-
-[chat GPT](https://chatgpt.com/)
