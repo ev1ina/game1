@@ -50,13 +50,17 @@ Projekti kallal töötamine võttis kokku umbes 50 tundi või rohkem, arvestades
 ## Kasutatud ressursid
 - **Programmeerimise juhend** YouTube , mille abil õppisime selle koodi kirjutamist. Kasutasime ka tasemete loomiseks mõeldud konstruktorit, kohandades seda oma vajadustele.
 [Youtube channel](https://www.youtube.com/watch?v=DHgj5jhMJKg&t=1s)
+
 [Github repositoorium tema prijektiga](https://github.com/russs123/Shooter)
+
 [Github repositoorium LevelEditoriga](https://github.com/russs123/LevelEditor)
 
 
 - **Graafilised ressursid** Disaini ja mänguelementide loomiseks kasutatud resursid.
+
 [Asset from Icho.io](https://szadiart.itch.io/rocky-world-platformer-set)
 
 
 - **Tehisintellekt** Aitas parandada meie vigu, selgitas, mida me valesti tegime, ning tuletas meelde, et oleme tulevased programmeerijad, kes peavad oma töö ise ära tegema. Samas pakkus AI meile ka lisatööd, et meid arendada...
+
 [chat GPT](https://chatgpt.com/)
