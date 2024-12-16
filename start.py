@@ -10,8 +10,13 @@
 # mõningane eeskuju: Super Mario
 #
 # Lisakommentaar (nt käivitusjuhend):
-# See on esimene mängu projekt, mistõttu võib koodis esineda mõningaid vigu. 
-# Mängu käivitamiseks soovitame kasutada debugi režiimi, et tuvastada ja parandada võimalikud probleemid.
+# Liikumine: WASD
+# Tulistamine: SPACE
+# Mängust väljumine: ESC või akna sulgemisnupp.
+#
+# Mängija juhib tegelast, kelle eesmärk on koguda kõik kolm smaragdi koopas, 
+# jõuda järgmisele tasemele, hävitada vaenlased ja vältida punaseid kristalle.
+#
 # Projekt ja instructioon võib leida githabis https://github.com/ev1ina/game1/tree/main
 #
 #
