@@ -49,6 +49,7 @@ Projekti kallal töötamine võttis kokku umbes 50 tundi või rohkem, arvestades
 
 ## Kasutatud ressursid
 - **Programmeerimise juhend** YouTube , mille abil õppisime selle koodi kirjutamist. Kasutasime ka tasemete loomiseks mõeldud konstruktorit, kohandades seda oma vajadustele.
+
 [Youtube channel](https://www.youtube.com/watch?v=DHgj5jhMJKg&t=1s)
 
 [Github repositoorium tema prijektiga](https://github.com/russs123/Shooter)
