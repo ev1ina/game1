@@ -33,7 +33,7 @@ Vaenlased võivad käituda ootamatult, sest neil on erivõime teleporteeruda võ
 - Peamine kood asub failis **start.py.**
 - Kaust **rocky** sisaldab animatsioonide ja disaini jaoks kasutatud pilte.
 - **insperatsioon** kaustas on pildid, millest me inspiratsiooni saime või mida projektis kasutasime.
-- **evelid** kaust sisaldab `.csv` faile, mis esindavad mängu tasemekaarte.
+- **levelid** kaust sisaldab `.csv` faile, mis esindavad mängu tasemekaarte.
 - Kaust **scripts** sisaldab eraldi koodi nuppude jaoks ning leveli ehitajat, mida kasutasime tasemete kujundamiseks.
 - Fail ico on mõeldud .exe failile ikooniks.
 - **pycache** on vajalik kiiremaks mängu tööks
