@@ -43,7 +43,7 @@ Vaenlased võivad käituda ootamatult, sest neil on erivõime teleporteeruda võ
 ## Tööprotsess
 Evelina kirjutas koodi, kujundas tasemed, otsis sobivaid ressursse ja pilte.
 Marta aitas selles kõiges kaasa.
-Projekti kallal töötamine võttis kokku umbes 50 tundi või rohkem, arvestades ka piltide otsimist ja õppimist, kuna see on meie esimene projekt.
+Projekti kallal töötamine võttis kokku umbes 50 tundi või rohkem, arvestades ka piltide otsimist ja õppimist, kuna see on meie esimene mäng.
 
 ---
 
