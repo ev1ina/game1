@@ -1,6 +1,6 @@
 # Rocky
 
-See on meie programmeerimisprojekt. Oleme Tartu Ülikooli tudengid Evelina Korteli ja Marta Laine . Lõime 2D mängu nimega *Rocky*.
+See on meie programmeerimisprojekt. Oleme Tartu Ülikooli tudengid Evelina Kortel ja Marta Laine . Lõime 2D mängu nimega *Rocky*.
 
 ---
 
