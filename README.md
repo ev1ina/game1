@@ -1,13 +1,13 @@
 # Rocky
 
-See on meie programmeerimisprojekt. Oleme Tartu Ülikooli tudengid Evelina Kortel ja Marta Laine . Lõime 2D mängu nimega *Rocky*.
+See on meie programmeerimisaine projekt. Oleme Tartu Ülikooli tudengid Evelina Kortel ja Marta Laine. Lõime 2D mängu nimega *Rocky*.
 
 ---
 
 ## Kuidas mängu käivitada?
 Mängu saab käivitada kahel viisil:
 1. Laadige alla ja pakkige lahti fail **rocky.zip**, kus asub `.exe` fail. Seda saab käivitada topeltklõpsuga.
-2. Kopeerige see repostiitoorium, avage kaust ja käivitage terminalis käsk:
+2. Kopeerige see repostitoorium, avage kaust ja käivitage terminalis käsk:
    ```bash
    python start.py
 
@@ -15,8 +15,8 @@ Mängu saab käivitada kahel viisil:
 
 ## Mängu juhtimine ja kontseptsioon
 
-Mängija juhib tegelast, kelle eesmärk on koguda kõik kolm smaragdi koopas, jõuda järgmisele tasemele, hävitada vaenlased ja vältida punaseid kristalle.
-Vaenlased võivad käituda ootamatult, sest neil on erivõime teleporteeruda või mõnikord väsida ja lihtsalt ise surra.
+Mängija juhib tegelast, kelle eesmärk on koguda kõik kolm smaragdi koopas, jõuda järgmisele tasemele, hävitada vaenlaseid ja vältida punaseid kristalle.
+Vaenlased võivad käituda ootamatult, mis tähendab, et neil on erivõime teleporteeruda või mõnikord väsida ja lihtsalt ise surra.
 
 ---
 
@@ -57,7 +57,7 @@ Projekti kallal töötamine võttis kokku umbes 50 tundi või rohkem, arvestades
 [Github repositoorium LevelEditoriga](https://github.com/russs123/LevelEditor)
 
 
-- **Graafilised ressursid** Disaini ja mänguelementide loomiseks kasutatud resursid.
+- **Graafilised ressursid** Disaini ja mänguelementide loomiseks kasutatud ressursid.
 
 [Asset from Icho.io](https://szadiart.itch.io/rocky-world-platformer-set)
 
